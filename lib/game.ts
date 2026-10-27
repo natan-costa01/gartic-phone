@@ -1,0 +1,207 @@
+import { randomBytes, createHash } from "node:crypto";
+export type Entry = {
+  kind: "phrase" | "drawing";
+  value: string;
+  playerId: string;
+  timedOut?: boolean;
+};
+export type Player = { id: string; name: string; secret: string };
+export type Room = {
+  code: string;
+  version: number;
+  hostId: string;
+  players: Player[];
+  status: "lobby" | "playing" | "finished";
+  round: number;
+  totalRounds: number;
+  seconds: number;
+  ending: "auto" | "phrase" | "drawing";
+  deadline: number;
+  albums: Entry[][];
+  createdAt: number;
+};
+export class GameError extends Error {
+  constructor(
+    message: string,
+    public status = 400,
+  ) {
+    super(message);
+  }
+}
+export const hash = (token: string) =>
+  createHash("sha256").update(token).digest("hex");
+export const id = () => randomBytes(18).toString("hex");
+export function nameOf(value: unknown) {
+  if (typeof value !== "string" || !value.trim() || value.trim().length > 24)
+    throw new GameError("Use um nome de 1 a 24 caracteres.");
+  return value.trim();
+}
+export function createRoom(name: unknown, now = Date.now()) {
+  const token = id(),
+    player = { id: id(), name: nameOf(name), secret: hash(token) };
+  const code = Array.from(
+    randomBytes(6),
+    (b) => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[b % 32],
+  ).join("");
+  const room: Room = {
+    code,
+    version: 0,
+    hostId: player.id,
+    players: [player],
+    status: "lobby",
+    round: 0,
+    totalRounds: 0,
+    seconds: 90,
+    ending: "auto",
+    deadline: 0,
+    albums: [],
+    createdAt: now,
+  };
+  return { room, token };
+}
+export function authenticate(room: Room, token: string) {
+  const p = room.players.find((p) => p.secret === hash(token));
+  if (!p) throw new GameError("Sua sessão nesta sala não foi encontrada.", 401);
+  return p;
+}
+export function albumIndex(room: Room, playerId: string) {
+  const n = room.players.length;
+  return (
+    (room.players.findIndex((p) => p.id === playerId) - (room.round % n) + n) %
+    n
+  );
+}
+export function kindAt(round: number): Entry["kind"] {
+  return round % 2 ? "drawing" : "phrase";
+}
+function advance(room: Room, now: number) {
+  room.round++;
+  if (room.round >= room.totalRounds) {
+    room.status = "finished";
+    room.deadline = 0;
+  } else room.deadline = now + room.seconds * 1000;
+}
+export function tick(room: Room, now = Date.now()) {
+  if (room.status !== "playing" || now < room.deadline) return false;
+  for (const p of room.players) {
+    const a = room.albums[albumIndex(room, p.id)];
+    if (a.length === room.round)
+      a.push({
+        kind: kindAt(room.round),
+        value: kindAt(room.round) === "phrase" ? "(Tempo esgotado)" : "",
+        playerId: p.id,
+        timedOut: true,
+      });
+  }
+  advance(room, now);
+  return true;
+}
+export function act(
+  room: Room,
+  token: string,
+  action: string,
+  data: Record<string, unknown>,
+  now = Date.now(),
+) {
+  const player = authenticate(room, token);
+  if (action === "start") {
+    if (room.hostId !== player.id)
+      throw new GameError("Só o anfitrião pode iniciar.", 403);
+    if (room.status !== "lobby") throw new GameError("A partida já começou.");
+    if (room.players.length < 2)
+      throw new GameError("Convide pelo menos mais um jogador.");
+    if (![60, 90, 120, 180].includes(Number(data.seconds)))
+      throw new GameError("Tempo inválido.");
+    if (!["auto", "phrase", "drawing"].includes(String(data.ending)))
+      throw new GameError("Final inválido.");
+    room.seconds = Number(data.seconds);
+    room.ending = data.ending as Room["ending"];
+    room.totalRounds = Math.max(3, room.players.length);
+    if (room.ending !== "auto" && kindAt(room.totalRounds - 1) !== room.ending)
+      room.totalRounds++;
+    room.round = 0;
+    room.albums = room.players.map(() => []);
+    room.status = "playing";
+    room.deadline = now + room.seconds * 1000;
+  } else if (action === "submit") {
+    if (room.status !== "playing" || data.round !== room.round)
+      throw new GameError("Esta rodada já terminou. Atualize sua tela.", 409);
+    const album = room.albums[albumIndex(room, player.id)];
+    if (album.length !== room.round)
+      throw new GameError("Sua jogada já foi enviada.", 409);
+    const value = data.value,
+      kind = kindAt(room.round);
+    if (typeof value !== "string") throw new GameError("Jogada inválida.");
+    if (kind === "phrase" && (!value.trim() || value.trim().length > 180))
+      throw new GameError("Escreva de 1 a 180 caracteres.");
+    if (
+      kind === "drawing" &&
+      (!/^data:image\/webp;base64,[A-Za-z0-9+/]+=*$/.test(value) ||
+        value.length > 180000)
+    )
+      throw new GameError("Desenho inválido ou muito grande.");
+    album.push({
+      kind,
+      value: kind === "phrase" ? value.trim() : value,
+      playerId: player.id,
+    });
+    if (room.albums.every((a) => a.length > room.round)) advance(room, now);
+  } else if (action === "reset") {
+    if (room.hostId !== player.id || room.status !== "finished")
+      throw new GameError("Aguarde o anfitrião e o fim da partida.", 403);
+    room.status = "lobby";
+    room.albums = [];
+    room.round = 0;
+    room.totalRounds = 0;
+  } else if (action === "remove") {
+    if (room.hostId !== player.id || room.status !== "lobby")
+      throw new GameError(
+        "Apenas o anfitrião pode remover na sala de espera.",
+        403,
+      );
+    if (data.playerId === player.id) throw new GameError("Você é o anfitrião.");
+    room.players = room.players.filter((p) => p.id !== data.playerId);
+  } else throw new GameError("Ação inválida.");
+}
+export function join(room: Room, name: unknown) {
+  if (room.status !== "lobby")
+    throw new GameError("Esta partida já começou. Entre na próxima!");
+  if (room.players.length >= 20)
+    throw new GameError("A sala está cheia (20 jogadores).");
+  const token = id();
+  room.players.push({ id: id(), name: nameOf(name), secret: hash(token) });
+  return token;
+}
+export function view(room: Room, token: string, selectedAlbum = 0) {
+  const player = authenticate(room, token),
+    album =
+      room.status === "playing"
+        ? room.albums[albumIndex(room, player.id)]
+        : null;
+  return {
+    version: room.version,
+    code: room.code,
+    status: room.status,
+    hostId: room.hostId,
+    me: player.id,
+    players: room.players.map(({ id, name }) => ({ id, name })),
+    round: room.round,
+    totalRounds: room.totalRounds,
+    deadline: room.deadline,
+    serverNow: Date.now(),
+    seconds: room.seconds,
+    ending: room.ending,
+    submitted: !!album && album.length > room.round,
+    completed:
+      room.status === "playing"
+        ? room.albums.filter((a) => a.length > room.round).length
+        : 0,
+    previous: album && room.round > 0 ? album[room.round - 1] : null,
+    revealedAlbum: selectedAlbum,
+    albums:
+      room.status === "finished"
+        ? room.albums.map((entries, i) => (i === selectedAlbum ? entries : []))
+        : null,
+  };
+}
+export type RoomView = ReturnType<typeof view>;
