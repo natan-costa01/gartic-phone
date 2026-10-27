@@ -11,7 +11,15 @@ Telefone sem fio com desenhos, em português, para **2 a 20 jogadores online**. 
 5. As rodadas alternam até todos participarem de cada álbum. Há no mínimo três rodadas para que mesmo duas pessoas possam desenhar e adivinhar. O anfitrião escolhe uma volta completa, terminar em frase ou terminar em desenho. Um final escolhido pode acrescentar uma rodada, fazendo o álbum retornar ao autor.
 6. O fim revela todas as transformações, com os nomes dos participantes. O anfitrião pode iniciar outra partida.
 
-Prazos de 60, 90, 120 ou 180 segundos. Quando todos enviam, a próxima etapa começa imediatamente. Jogadas que passam do prazo recebem um marcador de tempo esgotado. A verificação do prazo acontece nas consultas dos jogadores, sem cron externo. Se ninguém estiver conectado, o relógio é retomado na próxima consulta, sem pular várias rodadas de uma vez.
+## Modos de jogo
+
+O anfitrião escolhe o modo na sala de espera, e a escolha é sincronizada para todos:
+
+- **Clássico:** cada pessoa inventa uma frase de até **50 caracteres**; depois as rodadas alternam desenho e adivinhação. O limite de 50 vale também para interpretações, com contador na tela e validação no servidor. Emoji conta por ponto Unicode.
+- **Caos Criativo:** todos começam com um desenho livre. Nas rodadas seguintes, o desenho anterior é carregado no canvas para reinterpretar e acrescentar um elemento inesperado. Todas as etapas são desenhos, e a evolução completa é revelada no fim. Um desenho em branco por tempo esgotado permite começar novamente.
+- **Relâmpago:** a alternância do Clássico, com **30 segundos fixos**, controlados pelo servidor, por rodada.
+
+No Clássico e Caos Criativo, prazos de 60, 90, 120 ou 180 segundos. Quando todos enviam, a próxima etapa começa imediatamente. Jogadas que passam do prazo recebem um marcador de tempo esgotado. A verificação do prazo acontece nas consultas dos jogadores, sem cron externo. Se ninguém estiver conectado, o relógio é retomado na próxima consulta, sem pular várias rodadas de uma vez.
 
 ## Rodar localmente
 
@@ -47,7 +55,10 @@ npm run build
 
 - Sala privada por código e link, com anfitrião e remoção de jogadores antes do início.
 - Sessão aleatória por jogador, salva neste navegador para reconectar ao recarregar.
-- Canvas com mouse, caneta e toque; oito cores, espessura, borracha, desfazer e limpar.
+- Canvas com mouse, caneta e toque; **16 cores**, seletor personalizado, espessura, borracha, desfazer e limpar.
+- **Balde de tinta** para áreas conectadas/fechadas, com desfazer.
+- **Dez formas** com prévia ao arrastar: linha, círculo, elipse, quadrado, retângulo, triângulo, pentágono, hexágono, estrela e seta. Formas fechadas têm opções de contorno e preenchimento na cor selecionada. Desfazer preserva as 15 ações anteriores.
+- **Salvar sequência completa em PDF**, disponível a todos após o fim: exporta todos os álbuns, desenhos, frases, autores e ordem das rodadas. O arquivo é gerado no navegador, carregando um álbum por vez, sem credenciais ou serviço adicional. Salve antes que o anfitrião inicie outra partida; se a partida mudar durante o download, o exportador interrompe com um aviso para não misturar sequências.
 - Álbuns completos só ficam disponíveis após o encerramento. Segredos de sessão são armazenados com hash e nunca retornam na lista de jogadores.
 - Interface responsiva para celular e desktop; temporizador e contagem de envios sincronizados pelo servidor.
 
@@ -55,4 +66,4 @@ npm run build
 
 O jogo é para grupos de amigos. Não tem moderação, contas, recuperação de sessão em outro dispositivo, transferência de anfitrião nem proteção avançada contra criação abusiva de salas. Se o anfitrião fechar o navegador, pode voltar pelo mesmo navegador; a partida iniciada continua sem sua presença, mas só ele pode reiniciá-la. Códigos são convites, não autenticação pessoal. Para abrir publicamente a grandes audiências, configure limites de tráfego na Vercel e monitore a cota Redis; polling e desenhos consomem comandos e armazenamento. As fontes são hospedadas junto com o jogo, sem dependência de Google Fonts no navegador.
 
-Os testes automatizados validam a lógica e privacidade das rodadas, permissões, expiração de jogadas e limite de 20 jogadores. A validação real da Vercel/Redis requer as credenciais da sua própria implantação.
+Os testes automatizados validam a lógica e privacidade das rodadas, permissões, limite de 50 caracteres, os três modos, expiração de jogadas, limite de 20 jogadores, preenchimento conectado e construção das formas. A validação real da Vercel/Redis requer as credenciais da sua própria implantação.

@@ -1479,3 +1479,143 @@ footer {
     transition: none !important;
   }
 }
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.drawing-controls {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.drawing-toolbar {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+}
+.drawing-toolbar .swatches {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.custom-color {
+  display: flex;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #d5c9df;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.custom-color input {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  margin: -4px;
+  cursor: pointer;
+}
+.drawing-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.drawing-actions select {
+  padding: 8px;
+  border: 1px solid var(--line);
+  background: #fcfaff;
+  border-radius: 6px;
+  color: #7955b1;
+  max-width: 140px;
+}
+.drawing-actions .active {
+  background: #e9ddf5;
+}
+.brush-size {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: #9271a5;
+}
+.brush-size input {
+  width: 85px;
+  accent-color: var(--purple);
+}
+.shape-options {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  color: #9b88ac;
+  font-size: 11px;
+}
+.shape-options label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.shape-options input {
+  accent-color: var(--purple);
+}
+.shape-options > span {
+  font-size: 10px;
+}
+.mode-description {
+  font-size: 11px;
+  color: #a294ac;
+  line-height: 1.8;
+  margin-top: 12px;
+}
+.pdf-export {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 15px auto 30px;
+  text-align: center;
+}
+.pdf-export small {
+  font-size: 10px;
+  color: #a994ba;
+}
+.pdf-export button {
+  max-width: 100%;
+}
+.drawing-controls:disabled {
+  opacity: 0.55;
+}
+@media (max-width: 620px) {
+  .drawing-toolbar .swatches {
+    gap: 8px;
+  }
+  .drawing-actions {
+    gap: 5px;
+  }
+  .drawing-actions select {
+    font-size: 11px;
+    max-width: 120px;
+  }
+  .shape-options {
+    gap: 10px;
+  }
+  .shape-options > span {
+    width: 100%;
+    text-align: center;
+  }
+  .drawing-toolbar .swatch {
+    width: 25px;
+    height: 25px;
+  }
+}

@@ -6,7 +6,10 @@ export type Entry = {
   timedOut?: boolean;
 };
 export type Player = { id: string; name: string; secret: string };
+export type GameMode = "classic" | "chaos" | "lightning";
 export type Room = {
+  mode?: GameMode;
+  gameId?: string;
   code: string;
   version: number;
   hostId: string;
@@ -51,6 +54,7 @@ export function createRoom(name: unknown, now = Date.now()) {
     status: "lobby",
     round: 0,
     totalRounds: 0,
+    mode: "classic",
     seconds: 90,
     ending: "auto",
     deadline: 0,
@@ -71,8 +75,11 @@ export function albumIndex(room: Room, playerId: string) {
     n
   );
 }
-export function kindAt(round: number): Entry["kind"] {
-  return round % 2 ? "drawing" : "phrase";
+export function kindAt(
+  round: number,
+  mode: GameMode = "classic",
+): Entry["kind"] {
+  return mode === "chaos" || round % 2 ? "drawing" : "phrase";
 }
 function advance(room: Room, now: number) {
   room.round++;
@@ -87,8 +94,9 @@ export function tick(room: Room, now = Date.now()) {
     const a = room.albums[albumIndex(room, p.id)];
     if (a.length === room.round)
       a.push({
-        kind: kindAt(room.round),
-        value: kindAt(room.round) === "phrase" ? "(Tempo esgotado)" : "",
+        kind: kindAt(room.round, room.mode),
+        value:
+          kindAt(room.round, room.mode) === "phrase" ? "(Tempo esgotado)" : "",
         playerId: p.id,
         timedOut: true,
       });
@@ -104,7 +112,25 @@ export function act(
   now = Date.now(),
 ) {
   const player = authenticate(room, token);
-  if (action === "start") {
+  if (action === "configure") {
+    if (room.hostId !== player.id || room.status !== "lobby")
+      throw new GameError(
+        "Apenas o anfitrião pode configurar a sala de espera.",
+        403,
+      );
+    const mode = data.mode ?? room.mode ?? "classic";
+    if (!["classic", "chaos", "lightning"].includes(String(mode)))
+      throw new GameError("Modo inválido.");
+    const seconds = Number(data.seconds ?? room.seconds);
+    if (![60, 90, 120, 180].includes(seconds))
+      throw new GameError("Tempo inválido.");
+    const ending = data.ending ?? room.ending;
+    if (!["auto", "phrase", "drawing"].includes(String(ending)))
+      throw new GameError("Final inválido.");
+    room.mode = mode as GameMode;
+    room.seconds = seconds;
+    room.ending = ending as Room["ending"];
+  } else if (action === "start") {
     if (room.hostId !== player.id)
       throw new GameError("Só o anfitrião pode iniciar.", 403);
     if (room.status !== "lobby") throw new GameError("A partida já começou.");
@@ -114,10 +140,19 @@ export function act(
       throw new GameError("Tempo inválido.");
     if (!["auto", "phrase", "drawing"].includes(String(data.ending)))
       throw new GameError("Final inválido.");
-    room.seconds = Number(data.seconds);
-    room.ending = data.ending as Room["ending"];
+    const mode = data.mode ?? room.mode ?? "classic";
+    if (!["classic", "chaos", "lightning"].includes(String(mode)))
+      throw new GameError("Modo inválido.");
+    room.mode = mode as GameMode;
+    room.gameId = id();
+    room.seconds = mode === "lightning" ? 30 : Number(data.seconds);
+    room.ending =
+      room.mode === "chaos" ? "drawing" : (data.ending as Room["ending"]);
     room.totalRounds = Math.max(3, room.players.length);
-    if (room.ending !== "auto" && kindAt(room.totalRounds - 1) !== room.ending)
+    if (
+      room.ending !== "auto" &&
+      kindAt(room.totalRounds - 1, room.mode) !== room.ending
+    )
       room.totalRounds++;
     room.round = 0;
     room.albums = room.players.map(() => []);
@@ -130,10 +165,13 @@ export function act(
     if (album.length !== room.round)
       throw new GameError("Sua jogada já foi enviada.", 409);
     const value = data.value,
-      kind = kindAt(room.round);
+      kind = kindAt(room.round, room.mode);
     if (typeof value !== "string") throw new GameError("Jogada inválida.");
-    if (kind === "phrase" && (!value.trim() || value.trim().length > 180))
-      throw new GameError("Escreva de 1 a 180 caracteres.");
+    if (
+      kind === "phrase" &&
+      (!value.trim() || Array.from(value.trim()).length > 50)
+    )
+      throw new GameError("Escreva de 1 a 50 caracteres.");
     if (
       kind === "drawing" &&
       (!/^data:image\/webp;base64,[A-Za-z0-9+/]+=*$/.test(value) ||
@@ -153,6 +191,7 @@ export function act(
     room.albums = [];
     room.round = 0;
     room.totalRounds = 0;
+    if (room.seconds === 30) room.seconds = 90;
   } else if (action === "remove") {
     if (room.hostId !== player.id || room.status !== "lobby")
       throw new GameError(
@@ -180,6 +219,9 @@ export function view(room: Room, token: string, selectedAlbum = 0) {
         : null;
   return {
     version: room.version,
+    mode: room.mode ?? "classic",
+    gameId: room.gameId ?? `${room.createdAt}-${room.totalRounds}`,
+    taskKind: kindAt(room.round, room.mode),
     code: room.code,
     status: room.status,
     hostId: room.hostId,

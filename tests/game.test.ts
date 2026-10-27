@@ -102,4 +102,103 @@ test("revealed albums are paginated to keep response sizes bounded", () => {
   assert.equal(state.albums?.[2].length, 3);
 });
 
-test('two players still get a drawing and a guessing turn',()=>{const {room,tokens}=setup(2);act(room,tokens[0],'start',{seconds:60,ending:'auto'},1000);assert.equal(room.totalRounds,3);for(let r=0;r<3;r++){assert.equal(room.round,r);for(const token of tokens)act(room,token,'submit',{round:r,value:r===1?drawing:'um gato'},1000+r);}assert.equal(room.status,'finished');assert.equal(room.albums[0][2].kind,'phrase');});
+test("two players still get a drawing and a guessing turn", () => {
+  const { room, tokens } = setup(2);
+  act(room, tokens[0], "start", { seconds: 60, ending: "auto" }, 1000);
+  assert.equal(room.totalRounds, 3);
+  for (let r = 0; r < 3; r++) {
+    assert.equal(room.round, r);
+    for (const token of tokens)
+      act(
+        room,
+        token,
+        "submit",
+        { round: r, value: r === 1 ? drawing : "um gato" },
+        1000 + r,
+      );
+  }
+  assert.equal(room.status, "finished");
+  assert.equal(room.albums[0][2].kind, "phrase");
+});
+
+test("50-character boundary is enforced on both phrases and guesses including emoji", () => {
+  const { room, tokens } = setup(2);
+  act(room, tokens[0], "start", { seconds: 60, ending: "phrase" });
+  assert.throws(
+    () => act(room, tokens[0], "submit", { round: 0, value: "a".repeat(51) }),
+    /50/,
+  );
+  act(room, tokens[0], "submit", { round: 0, value: "😀".repeat(50) });
+  act(room, tokens[1], "submit", { round: 0, value: "a".repeat(50) });
+  for (const token of tokens)
+    act(room, token, "submit", { round: 1, value: drawing });
+  assert.throws(
+    () => act(room, tokens[0], "submit", { round: 2, value: "😀".repeat(51) }),
+    /50/,
+  );
+  act(room, tokens[0], "submit", { round: 2, value: "b".repeat(50) });
+  act(room, tokens[1], "submit", { round: 2, value: "adivinhei" });
+  assert.equal(room.status, "finished");
+});
+test("chaos starts with drawings and rotates only drawings for 2 to 20 players", () => {
+  for (const n of [2, 3, 20]) {
+    const { room, tokens } = setup(n);
+    act(room, tokens[0], "configure", {
+      mode: "chaos",
+      seconds: 60,
+      ending: "phrase",
+    });
+    act(room, tokens[0], "start", { seconds: 60, ending: "phrase" }, 1000);
+    assert.equal(room.ending, "drawing");
+    const visited = room.players.map(() => new Set<number>());
+    for (let r = 0; r < room.totalRounds; r++)
+      for (let i = 0; i < n; i++) {
+        const v = view(room, tokens[i]);
+        assert.equal(v.taskKind, "drawing");
+        assert.equal(v.albums, null);
+        if (r) assert.equal(v.previous?.kind, "drawing");
+        visited[i].add(albumIndex(room, room.players[i].id));
+        assert.throws(() =>
+          act(room, tokens[i], "submit", { round: r, value: "uma frase" }),
+        );
+        act(room, tokens[i], "submit", { round: r, value: drawing }, 1000 + r);
+      }
+    assert.equal(room.status, "finished");
+    assert.ok(visited.every((v) => v.size === n));
+    assert.ok(room.albums.every((a) => a.every((e) => e.kind === "drawing")));
+  }
+});
+test("lightning uses server-enforced 30s deadlines with classic alternation", () => {
+  const { room, tokens } = setup();
+  act(
+    room,
+    tokens[0],
+    "start",
+    { mode: "lightning", seconds: 180, ending: "auto" },
+    1000,
+  );
+  assert.equal(room.seconds, 30);
+  assert.equal(room.deadline, 31000);
+  assert.equal(tick(room, 30999), false);
+  assert.equal(tick(room, 31000), true);
+  assert.equal(view(room, tokens[0]).taskKind, "drawing");
+  assert.equal(room.deadline, 61000);
+  tick(room, 61000);
+  assert.equal(view(room, tokens[0]).taskKind, "phrase");
+  tick(room, 91000);
+  assert.equal(room.status, "finished");
+});
+test("mode settings require the lobby host and reject unsupported values", () => {
+  const { room, tokens } = setup();
+  assert.throws(() => act(room, tokens[1], "configure", { mode: "chaos" }));
+  assert.throws(() => act(room, tokens[0], "configure", { mode: "unknown" }));
+  assert.equal(room.mode, "classic");
+  act(room, tokens[0], "configure", {
+    mode: "lightning",
+    seconds: 90,
+    ending: "phrase",
+  });
+  assert.equal(view(room, tokens[1]).mode, "lightning");
+  act(room, tokens[0], "start", { seconds: 90, ending: "phrase" });
+  assert.throws(() => act(room, tokens[0], "configure", { mode: "classic" }));
+});

@@ -8,7 +8,7 @@ import {
   ChevronRight,
   Clock3,
   Copy,
-  Eraser,
+  Download,
   Heart,
   Lightbulb,
   LoaderCircle,
@@ -18,22 +18,12 @@ import {
   Plus,
   RotateCcw,
   Sparkles,
-  Trash2,
   Users,
   X,
 } from "lucide-react";
-import type { RoomView } from "@/lib/game";
+import Drawing from "@/components/Drawing";
+import type { GameMode, RoomView } from "@/lib/game";
 type Session = { code: string; token: string };
-const colors = [
-  "#27243a",
-  "#8b5cf6",
-  "#ef6a93",
-  "#f4ad45",
-  "#f5d96c",
-  "#64bb95",
-  "#61a8dd",
-  "#ffffff",
-];
 const avatarColors = [
   "#e9deff",
   "#ffdfcc",
@@ -205,178 +195,6 @@ function Illustration() {
     </svg>
   );
 }
-function Drawing({
-  onSubmit,
-  busy,
-}: {
-  onSubmit: (value: string) => void;
-  busy: boolean;
-}) {
-  const canvas = useRef<HTMLCanvasElement>(null);
-  const down = useRef(false);
-  const last = useRef<{ x: number; y: number } | null>(null);
-  const history = useRef<ImageData[]>([]);
-  const [color, setColor] = useState(colors[0]);
-  const [size, setSize] = useState(5);
-  const [erase, setErase] = useState(false);
-  const [dirty, setDirty] = useState(false);
-  const [error, setError] = useState("");
-  useEffect(() => {
-    const c = canvas.current!;
-    const ctx = c.getContext("2d")!;
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, c.width, c.height);
-  }, []);
-  function remember() {
-    const c = canvas.current!;
-    history.current.push(
-      c.getContext("2d")!.getImageData(0, 0, c.width, c.height),
-    );
-    if (history.current.length > 15) history.current.shift();
-  }
-  function point(e: React.PointerEvent<HTMLCanvasElement>) {
-    const c = canvas.current!,
-      r = c.getBoundingClientRect();
-    return {
-      x: ((e.clientX - r.left) * c.width) / r.width,
-      y: ((e.clientY - r.top) * c.height) / r.height,
-    };
-  }
-  function paint(e: React.PointerEvent<HTMLCanvasElement>, start = false) {
-    if (!down.current && !start) return;
-    const ctx = canvas.current!.getContext("2d")!,
-      p = point(e),
-      from = last.current ?? p;
-    ctx.strokeStyle = erase ? "#ffffff" : color;
-    ctx.fillStyle = ctx.strokeStyle;
-    ctx.lineWidth = erase ? size * 4 : size;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.beginPath();
-    ctx.moveTo(from.x, from.y);
-    ctx.lineTo(p.x, p.y);
-    ctx.stroke();
-    if (start) {
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, ctx.lineWidth / 2, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    last.current = p;
-    setDirty(true);
-  }
-  function send() {
-    const value = canvas.current!.toDataURL("image/webp", 0.65);
-    if (value.length > 180000) {
-      setError(
-        "Este desenho ficou muito detalhado. Apague alguns traços para enviar.",
-      );
-      return;
-    }
-    onSubmit(value);
-  }
-  return (
-    <div className="drawing-area">
-      <div className="canvas-wrap">
-        <canvas
-          ref={canvas}
-          width={900}
-          height={560}
-          aria-label="Área de desenho. Use o mouse ou toque para desenhar."
-          onPointerDown={(e) => {
-            if (busy) return;
-            remember();
-            down.current = true;
-            last.current = null;
-            e.currentTarget.setPointerCapture(e.pointerId);
-            paint(e, true);
-          }}
-          onPointerMove={(e) => paint(e)}
-          onPointerUp={() => {
-            down.current = false;
-            last.current = null;
-          }}
-          onPointerCancel={() => {
-            down.current = false;
-            last.current = null;
-          }}
-        />
-      </div>
-      <div className="tools">
-        <div className="swatches">
-          {colors.map((c) => (
-            <button
-              key={c}
-              aria-label={`Cor ${c}`}
-              aria-pressed={!erase && color === c}
-              className={`swatch ${!erase && color === c ? "selected" : ""}`}
-              style={{ background: c }}
-              onClick={() => {
-                setColor(c);
-                setErase(false);
-              }}
-            />
-          ))}
-        </div>
-        <div className="tool-group">
-          <button
-            className={`icon-button ${erase ? "active" : ""}`}
-            title="Borracha"
-            aria-label="Borracha"
-            onClick={() => setErase(!erase)}
-          >
-            <Eraser size={19} />
-          </button>
-          <input
-            aria-label="Espessura do pincel"
-            type="range"
-            min="2"
-            max="24"
-            value={size}
-            onChange={(e) => setSize(+e.target.value)}
-          />
-          <button
-            className="icon-button"
-            aria-label="Desfazer"
-            title="Desfazer"
-            onClick={() => {
-              const previous = history.current.pop();
-              if (previous)
-                canvas.current!.getContext("2d")!.putImageData(previous, 0, 0);
-            }}
-          >
-            <RotateCcw size={18} />
-          </button>
-          <button
-            className="icon-button"
-            title="Limpar desenho"
-            aria-label="Limpar desenho"
-            onClick={() => {
-              remember();
-              const c = canvas.current!;
-              c.getContext("2d")!.fillStyle = "#fff";
-              c.getContext("2d")!.fillRect(0, 0, c.width, c.height);
-            }}
-          >
-            <Trash2 size={18} />
-          </button>
-        </div>
-      </div>
-      {error && <p className="error">{error}</p>}
-      <button
-        className="primary submit"
-        disabled={!dirty || busy}
-        onClick={send}
-      >
-        {busy ? (
-          <LoaderCircle className="spin" size={18} />
-        ) : (
-          <Check size={18} />
-        )}{" "}
-        Enviar desenho
-      </button>
-    </div>
-  );
-}
 export default function Page() {
   const [session, setSession] = useState<Session | null>(null),
     [room, setRoom] = useState<RoomView | null>(null),
@@ -388,6 +206,9 @@ export default function Page() {
     [connection, setConnection] = useState(""),
     [phrase, setPhrase] = useState(""),
     [seconds, setSeconds] = useState(90),
+    [gameMode, setGameMode] = useState<GameMode>("classic"),
+    [exporting, setExporting] = useState(false),
+    [exportProgress, setExportProgress] = useState(""),
     [ending, setEnding] = useState("auto"),
     [now, setNow] = useState(Date.now()),
     [copied, setCopied] = useState(false),
@@ -415,6 +236,11 @@ export default function Page() {
     setRoom((previous) =>
       previous?.code === r.code && previous.version > r.version ? previous : r,
     );
+    if (r.status === "lobby") {
+      setGameMode(r.mode);
+      setSeconds(r.seconds === 30 ? 90 : r.seconds);
+      setEnding(r.ending);
+    }
     setOffset(r.serverNow - Date.now());
     setConnection("");
   }, []);
@@ -494,6 +320,23 @@ export default function Page() {
       );
     } finally {
       setBusy(false);
+    }
+  }
+  async function downloadPdf() {
+    if (!room || !session || exporting) return;
+    setExporting(true);
+    setError("");
+    setExportProgress("Préparando PDF…");
+    try {
+      const { exportGamePdf } = await import("@/lib/export-pdf");
+      await exportGamePdf(room, session, setExportProgress);
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "Não foi possível gerar o PDF.",
+      );
+    } finally {
+      setExporting(false);
+      setExportProgress("");
     }
   }
   async function copy() {
@@ -847,11 +690,50 @@ export default function Page() {
                   <div className="panel settings">
                     <h2>Do seu jeito</h2>
                     <label>
-                      Tempo por rodada
+                      Modo de jogo
+                      <select
+                        aria-label="Modo de jogo"
+                        value={gameMode}
+                        disabled={busy || room.me !== room.hostId}
+                        onChange={(e) => {
+                          const next = e.target.value as GameMode;
+                          setGameMode(next);
+                          action("configure", { mode: next, seconds, ending });
+                        }}
+                      >
+                        <option value="classic">Clássico</option>
+                        <option value="chaos">Caos Criativo</option>
+                        <option value="lightning">
+                          Relâmpago · 30 segundos
+                        </option>
+                      </select>
+                    </label>
+                    <p className="mode-description">
+                      {gameMode === "chaos"
+                        ? "Comece com um desenho livre. Receba o anterior como base e acrescente algo inesperado a cada rodada. Só desenhos, até o fim!"
+                        : gameMode === "lightning"
+                          ? "Frases e desenhos como no Clássico, com apenas 30 segundos por rodada."
+                          : "Uma frase original vira desenho, depois adivinhação. Cada um vê apenas a etapa anterior."}
+                    </p>
+                    <label>
+                      {gameMode === "lightning"
+                        ? "Tempo por rodada · fixo em 30 segundos"
+                        : "Tempo por rodada"}
                       <select
                         value={seconds}
-                        disabled={room.me !== room.hostId}
-                        onChange={(e) => setSeconds(+e.target.value)}
+                        disabled={
+                          busy ||
+                          room.me !== room.hostId ||
+                          gameMode === "lightning"
+                        }
+                        onChange={(e) => {
+                          setSeconds(+e.target.value);
+                          action("configure", {
+                            mode: gameMode,
+                            seconds: +e.target.value,
+                            ending,
+                          });
+                        }}
                       >
                         <option value={60}>1 minuto · rapidinho</option>
                         <option value={90}>1 min 30 s · na medida</option>
@@ -862,9 +744,20 @@ export default function Page() {
                     <label>
                       Como a história termina?
                       <select
-                        value={ending}
-                        disabled={room.me !== room.hostId}
-                        onChange={(e) => setEnding(e.target.value)}
+                        value={gameMode === "chaos" ? "drawing" : ending}
+                        disabled={
+                          busy ||
+                          room.me !== room.hostId ||
+                          gameMode === "chaos"
+                        }
+                        onChange={(e) => {
+                          setEnding(e.target.value);
+                          action("configure", {
+                            mode: gameMode,
+                            seconds,
+                            ending: e.target.value,
+                          });
+                        }}
                       >
                         <option value="auto">Uma volta completa</option>
                         <option value="phrase">Com uma adivinhação</option>
@@ -872,9 +765,9 @@ export default function Page() {
                       </select>
                     </label>
                     <p className="settings-note">
-                      Cada um inventa só a primeira frase. Depois, é desenhar e
-                      adivinhar até todos participarem de cada álbum. O final
-                      escolhido pode acrescentar uma rodada.
+                      {gameMode === "chaos"
+                        ? "Todos criam o desenho inicial. Nas próximas rodadas, reinterpretam o desenho recebido acrescentando um novo elemento. Todos participam de cada álbum."
+                        : "Cada um inventa só a primeira frase. Depois, é desenhar e adivinhar até todos participarem de cada álbum. O final escolhido pode acrescentar uma rodada."}
                     </p>
                     <button
                       className="primary wide"
@@ -883,7 +776,9 @@ export default function Page() {
                         room.players.length < 2 ||
                         room.me !== room.hostId
                       }
-                      onClick={() => action("start", { seconds, ending })}
+                      onClick={() =>
+                        action("start", { seconds, ending, mode: gameMode })
+                      }
                     >
                       <Play size={18} />
                       {room.me === room.hostId
@@ -939,25 +834,35 @@ export default function Page() {
                   <>
                     <div className="game-heading compact">
                       <span className="eyebrow">
-                        {room.round === 0
-                          ? "ONDE TUDO COMEÇA"
-                          : room.round % 2
-                            ? "AGORA É COM SEU PINCEL"
-                            : "O QUE VOCÊ ESTÁ VENDO?"}
+                        {room.mode === "chaos"
+                          ? "CAOS CRIATIVO"
+                          : room.round === 0
+                            ? "ONDE TUDO COMEÇA"
+                            : room.round % 2
+                              ? "AGORA É COM SEU PINCEL"
+                              : "O QUE VOCÊ ESTÁ VENDO?"}
                       </span>
                       <h1>
-                        {room.round === 0
-                          ? "Uma frase. Infinitas possibilidades."
-                          : room.round % 2
-                            ? "Dê forma a essa ideia."
-                            : "Que história esse desenho conta?"}
+                        {room.mode === "chaos"
+                          ? room.round === 0
+                            ? "Todo caos começa com um desenho."
+                            : "Acrescente uma surpresa à história."
+                          : room.round === 0
+                            ? "Uma frase. Infinitas possibilidades."
+                            : room.round % 2
+                              ? "Dê forma a essa ideia."
+                              : "Que história esse desenho conta?"}
                       </h1>
                       <p>
-                        {room.round === 0
-                          ? "Invente qualquer coisa. Um elefante bebendo água? Um abacate de férias?"
-                          : room.round % 2
-                            ? "Desenhe a frase abaixo. Evite escrever palavras no desenho!"
-                            : "Adivinhe o desenho. Essa será a frase que o próximo jogador vai receber."}
+                        {room.mode === "chaos"
+                          ? room.round === 0
+                            ? "Desenhe uma ideia livre. Ela vai se transformar nas mãos dos outros jogadores."
+                            : "O desenho anterior já está na sua tela. Reinterprete-o e acrescente um elemento inesperado!"
+                          : room.round === 0
+                            ? "Invente qualquer coisa. Um elefante bebendo água? Um abacate de férias?"
+                            : room.round % 2
+                              ? "Desenhe a frase abaixo. Evite escrever palavras no desenho!"
+                              : "Adivinhe o desenho. Essa será a frase que o próximo jogador vai receber."}
                       </p>
                     </div>
                     {room.previous && (
@@ -970,7 +875,11 @@ export default function Page() {
                         ) : room.previous.value ? (
                           <img
                             src={room.previous.value}
-                            alt="Desenho do jogador anterior para você adivinhar"
+                            alt={
+                              room.mode === "chaos"
+                                ? "Desenho anterior para reinterpretar"
+                                : "Desenho do jogador anterior para você adivinhar"
+                            }
                           />
                         ) : (
                           <div className="empty-drawing">
@@ -983,10 +892,15 @@ export default function Page() {
                         )}
                       </div>
                     )}
-                    {room.round % 2 ? (
+                    {room.taskKind === "drawing" ? (
                       <Drawing
                         key={`${room.code}-${room.round}`}
                         busy={busy}
+                        initialImage={
+                          room.mode === "chaos"
+                            ? room.previous?.value || undefined
+                            : undefined
+                        }
                         onSubmit={(value) =>
                           action("submit", { round: room.round, value })
                         }
@@ -1010,9 +924,13 @@ export default function Page() {
                         <textarea
                           id="phrase"
                           required
-                          maxLength={180}
+                          maxLength={100}
                           value={phrase}
-                          onChange={(e) => setPhrase(e.target.value)}
+                          onChange={(e) =>
+                            setPhrase(
+                              Array.from(e.target.value).slice(0, 50).join(""),
+                            )
+                          }
                           placeholder={
                             room.round === 0
                               ? "Um elefante bebendo água na lua…"
@@ -1021,10 +939,14 @@ export default function Page() {
                           autoFocus
                         />
                         <div className="phrase-footer">
-                          <span>{phrase.length}/180</span>
+                          <span>{Array.from(phrase).length}/50</span>
                           <button
                             className="primary"
-                            disabled={busy || !phrase.trim()}
+                            disabled={
+                              busy ||
+                              !phrase.trim() ||
+                              Array.from(phrase.trim()).length > 50
+                            }
                           >
                             {busy ? (
                               <LoaderCircle className="spin" size={18} />
@@ -1117,6 +1039,26 @@ export default function Page() {
                     );
                   })}
                 </div>
+                <div className="pdf-export">
+                  <button
+                    className="secondary"
+                    disabled={exporting}
+                    onClick={downloadPdf}
+                  >
+                    {exporting ? (
+                      <LoaderCircle className="spin" size={17} />
+                    ) : (
+                      <Download size={17} />
+                    )}{" "}
+                    {exporting
+                      ? exportProgress
+                      : "Salvar sequência completa em PDF"}
+                  </button>
+                  <small>
+                    Todos os álbuns, desenhos, frases e autores, na ordem das
+                    rodadas.
+                  </small>
+                </div>
                 <div className="reveal-actions">
                   <button
                     className="secondary"
@@ -1137,7 +1079,7 @@ export default function Page() {
                   ) : room.hostId === room.me ? (
                     <button
                       className="primary"
-                      disabled={busy}
+                      disabled={busy || exporting}
                       onClick={() => {
                         setAlbum(0);
                         action("reset");
