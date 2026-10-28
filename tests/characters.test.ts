@@ -11,8 +11,8 @@ import {
   portraitSprite,
 } from "../lib/characters";
 import { act, createRoom, join, view } from "../lib/game";
-test("20 illustrated presets include the photo avatar and expanded anime roster", () => {
-  assert.equal(PORTRAITS.length, 20);
+test("22 illustrated presets include Vitor, the anime roster and both public figures", () => {
+  assert.equal(PORTRAITS.length, 22);
   assert.deepEqual(
     PORTRAITS.map(([id]) => id),
     [
@@ -36,6 +36,8 @@ test("20 illustrated presets include the photo avatar and expanded anime roster"
       "vegeta",
       "killua",
       "kakashi",
+      "lula",
+      "bolsonaro",
     ],
   );
   const variants = CHARACTER_PRESETS.map(([animal]) =>
@@ -45,7 +47,7 @@ test("20 illustrated presets include the photo avatar and expanded anime roster"
       }),
     ),
   );
-  assert.equal(new Set(variants).size, 20);
+  assert.equal(new Set(variants).size, 22);
   assert.ok(variants.every((s) => !s.includes("crispEdges")));
   for (const [animal] of PORTRAITS) {
     const markup = renderToStaticMarkup(
@@ -162,5 +164,27 @@ test("portrait sheets keep the original portraits stable and map each new portra
   assert.deepEqual(portraitSprite("kakashi"), {
     image: "/characters/portraits-extra.png",
     position: "100% 100%",
+  });
+});
+
+test("Vitor display name and public figure portraits have correct dedicated sheet positions", () => {
+  assert.equal(
+    PORTRAITS.find(([id]) => id === "portrait")?.[1],
+    "Vitor Carneiro",
+  );
+  for (const animal of ["lula", "bolsonaro"] as const)
+    assert.equal(
+      parseCharacter({ ...DEFAULT_CHARACTER, animal }).animal,
+      animal,
+    );
+  assert.deepEqual(portraitSprite("lula"), {
+    image: "/characters/public-figures.png",
+    position: "0% 50%",
+    size: "200% 100%",
+  });
+  assert.deepEqual(portraitSprite("bolsonaro"), {
+    image: "/characters/public-figures.png",
+    position: "100% 50%",
+    size: "200% 100%",
   });
 });

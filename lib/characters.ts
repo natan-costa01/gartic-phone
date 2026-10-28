@@ -32,7 +32,7 @@ export const CHARACTER_COLORS = [
   "#92d5d2",
 ] as const;
 export const PORTRAITS = [
-  ["portrait", "Gay SãoPaulino"],
+  ["portrait", "Vitor Carneiro"],
   ["naruto", "Naruto"],
   ["goku", "Goku"],
   ["sasuke", "Sasuke"],
@@ -52,6 +52,8 @@ export const PORTRAITS = [
   ["vegeta", "Vegeta"],
   ["killua", "Killua"],
   ["kakashi", "Kakashi"],
+  ["lula", "Lula"],
+  ["bolsonaro", "Bolsonaro"],
 ] as const;
 export const CHARACTER_PRESETS = PORTRAITS;
 export type CharacterId = (typeof CHARACTER_PRESETS)[number][0];
@@ -85,7 +87,17 @@ export function parseCharacter(value: unknown): Character {
   return { animal: characterId as CharacterId, color: v.color as string };
 }
 
-export function portraitSprite(id: CharacterId) {
+export function portraitSprite(id: CharacterId): {
+  image: string;
+  position: string;
+  size?: string;
+} {
+  if (id === "lula" || id === "bolsonaro")
+    return {
+      image: "/characters/public-figures.png",
+      position: id === "lula" ? "0% 50%" : "100% 50%",
+      size: "200% 100%",
+    };
   const found = PORTRAITS.findIndex(([key]) => key === id),
     index = found < 0 ? 0 : found;
   const cell = index % 10;

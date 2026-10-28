@@ -30,6 +30,7 @@ export default function CharacterAvatar({
         style={{
           backgroundImage: `url("${sprite.image}")`,
           backgroundPosition: sprite.position,
+          backgroundSize: sprite.size ?? "500% 200%",
         }}
       />
     </span>
