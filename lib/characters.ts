@@ -32,7 +32,7 @@ export const CHARACTER_COLORS = [
   "#92d5d2",
 ] as const;
 export const PORTRAITS = [
-  ["portrait", "Rapaz da foto"],
+  ["portrait", "Gay SãoPaulino"],
   ["naruto", "Naruto"],
   ["goku", "Goku"],
   ["sasuke", "Sasuke"],
