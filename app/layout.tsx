@@ -4,7 +4,7 @@ import "@fontsource-variable/outfit";
 import "./globals.css";
 export const viewport: Viewport = {
   themeColor: "#080f20",
-  colorScheme: "dark",
+  colorScheme: "light dark",
 };
 export const metadata: Metadata = {
   title: "PhoneArt — a imaginação passa de mão em mão",
@@ -17,7 +17,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" data-theme="dark" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('phoneart-theme')==='light'?'light':'dark';document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==='light'?'#f0f7ff':'#080f20';}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body>{children}</body>
     </html>
   );

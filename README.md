@@ -17,9 +17,9 @@ O anfitrião escolhe o modo na sala de espera, e a escolha é sincronizada para 
 
 - **Clássico:** cada pessoa inventa uma frase de até **50 caracteres**; depois as rodadas alternam desenho e adivinhação. O limite de 50 vale também para interpretações, com contador na tela e validação no servidor. Emoji conta por ponto Unicode.
 - **Caos Criativo:** todos começam com um desenho livre. Nas rodadas seguintes, o desenho anterior é carregado no canvas para reinterpretar e acrescentar um elemento inesperado. Todas as etapas são desenhos, e a evolução completa é revelada no fim. Um desenho em branco por tempo esgotado permite começar novamente.
-- **Relâmpago:** a alternância do Clássico, com **30 segundos fixos**, controlados pelo servidor, por rodada.
+- **Relâmpago:** a alternância do Clássico, com **15, 20, 30, 45 ou 60 segundos**, controlados pelo servidor, por rodada. Ao escolher o modo, o tempo inicial é 30 segundos.
 
-No Clássico e Caos Criativo, prazos de 60, 90, 120 ou 180 segundos. Quando todos enviam, a próxima etapa começa imediatamente. Jogadas que passam do prazo recebem um marcador de tempo esgotado. A verificação do prazo acontece nas consultas dos jogadores, sem cron externo. Se ninguém estiver conectado, o relógio é retomado na próxima consulta, sem pular várias rodadas de uma vez.
+No Clássico e Caos Criativo, prazos de **15, 20, 30, 45, 60, 90, 120, 180, 240, 300 ou 600 segundos**. Quando todos enviam, a próxima etapa começa imediatamente. Jogadas que passam do prazo recebem um marcador de tempo esgotado. A verificação do prazo acontece nas consultas dos jogadores, sem cron externo. Se ninguém estiver conectado, o relógio é retomado na próxima consulta, sem pular várias rodadas de uma vez.
 
 ## Rodar localmente
 
@@ -51,7 +51,15 @@ npm run build
 
 **Não use prefixo `NEXT_PUBLIC_` para essas credenciais.** Nunca coloque tokens no GitHub. Não precisa de Supabase, banco SQL, conta para jogadores, migração, WebSocket persistente ou servidor separado. O front-end consulta as salas a cada 2 segundos. Redis mantém as salas entre funções independentes da Vercel; uma operação atômica com versão evita perder jogadas simultâneas. Cada sala expira 24 horas após a criação.
 
+## Envio automático no fim do tempo
+
+O anfitrião pode ativar **Enviar desenho ao acabar o tempo** na sala de espera. A opção vale para todos e para os três modos. Ao zerar o cronômetro de uma rodada de desenho, o navegador congela o canvas e envia exatamente o que estiver nele, inclusive um desenho incompleto ou uma tela ainda em branco. O desenho é comprimido para caber no limite de envio; telas muito detalhadas podem ter a resolução reduzida sem apagar traços. A janela do servidor tem cinco segundos de tolerância para receber o envio final, sem alterar o tempo exibido de desenho. As frases continuam respeitando o prazo normal.
+
+Mantenha a página aberta e conectada: o canvas fica no navegador. Se o navegador for fechado, suspenso pelo sistema ou ficar sem conexão, o envio pode não chegar; após a tolerância, a partida registra tempo esgotado e continua. Com a opção desativada, permanece o envio manual.
+
 ## Visual e tela cheia
+
+O botão **Claro/Escuro**, no topo, troca o tema em todas as telas e salva a preferência neste navegador. O espaçamento é responsivo, com margens menores no celular e área de desenho mais ampla no desktop.
 
 Interface espacial com azul claro, ciano e violeta, cartões luminosos e ilustração vetorial local animada (sem downloads de imagens ou GIFs externos). A animação respeita a preferência de movimento reduzido.
 

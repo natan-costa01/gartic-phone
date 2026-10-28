@@ -168,13 +168,13 @@ test("chaos starts with drawings and rotates only drawings for 2 to 20 players",
     assert.ok(room.albums.every((a) => a.every((e) => e.kind === "drawing")));
   }
 });
-test("lightning uses server-enforced 30s deadlines with classic alternation", () => {
+test("lightning respects configured 30s deadlines with classic alternation", () => {
   const { room, tokens } = setup();
   act(
     room,
     tokens[0],
     "start",
-    { mode: "lightning", seconds: 180, ending: "auto" },
+    { mode: "lightning", seconds: 30, ending: "auto" },
     1000,
   );
   assert.equal(room.seconds, 30);
@@ -195,10 +195,108 @@ test("mode settings require the lobby host and reject unsupported values", () =>
   assert.equal(room.mode, "classic");
   act(room, tokens[0], "configure", {
     mode: "lightning",
-    seconds: 90,
+    seconds: 30,
     ending: "phrase",
   });
   assert.equal(view(room, tokens[1]).mode, "lightning");
-  act(room, tokens[0], "start", { seconds: 90, ending: "phrase" });
+  act(room, tokens[0], "start", { seconds: 30, ending: "phrase" });
   assert.throws(() => act(room, tokens[0], "configure", { mode: "classic" }));
+});
+
+test("all extended durations are validated on the server and retained in view", () => {
+  for (const seconds of [15, 20, 30, 45, 60, 90, 120, 180, 240, 300, 600]) {
+    const { room, tokens } = setup(2);
+    act(
+      room,
+      tokens[0],
+      "start",
+      { seconds, ending: "auto", mode: "classic" },
+      1000,
+    );
+    assert.equal(room.deadline, 1000 + seconds * 1000);
+    assert.equal(view(room, tokens[1]).seconds, seconds);
+  }
+  for (const seconds of [0, 14, 21, 601, NaN]) {
+    const { room, tokens } = setup();
+    assert.throws(
+      () => act(room, tokens[0], "start", { seconds, ending: "auto" }),
+      /Tempo/,
+    );
+  }
+  for (const seconds of [15, 20, 30, 45, 60]) {
+    const { room, tokens } = setup();
+    act(
+      room,
+      tokens[0],
+      "start",
+      { seconds, ending: "auto", mode: "lightning" },
+      1000,
+    );
+    assert.equal(room.seconds, seconds);
+  }
+  const { room, tokens } = setup();
+  assert.throws(
+    () =>
+      act(room, tokens[0], "start", {
+        seconds: 90,
+        ending: "auto",
+        mode: "lightning",
+      }),
+    /Tempo/,
+  );
+});
+test("automatic drawing grace accepts a final snapshot before fallback and never changes phrase deadlines", () => {
+  const { room, tokens } = setup(2);
+  act(room, tokens[0], "configure", {
+    seconds: 15,
+    mode: "chaos",
+    autoSendDrawings: true,
+  });
+  assert.equal(view(room, tokens[1]).autoSendDrawings, true);
+  act(
+    room,
+    tokens[0],
+    "start",
+    { seconds: 15, mode: "chaos", ending: "auto" },
+    1000,
+  );
+  assert.equal(tick(room, 16000), false);
+  act(room, tokens[0], "submit", { round: 0, value: drawing }, 16500);
+  assert.equal(tick(room, 20999), false);
+  assert.equal(tick(room, 21000), true);
+  assert.equal(room.albums[0][0].value, drawing);
+  assert.equal(room.albums[0][0].timedOut, undefined);
+  assert.equal(room.albums[1][0].timedOut, true);
+  assert.throws(
+    () => act(room, tokens[0], "submit", { round: 0, value: drawing }, 21001),
+    /terminou/,
+  );
+  const classic = setup(2);
+  act(
+    classic.room,
+    classic.tokens[0],
+    "start",
+    { seconds: 15, ending: "auto", autoSendDrawings: true },
+    1000,
+  );
+  assert.equal(tick(classic.room, 16000), true);
+});
+test("automatic drawing submission remains optional and host-controlled", () => {
+  const { room, tokens } = setup();
+  assert.equal(view(room, tokens[0]).autoSendDrawings, false);
+  assert.throws(() =>
+    act(room, tokens[1], "configure", { autoSendDrawings: true }),
+  );
+  assert.throws(() =>
+    act(room, tokens[0], "configure", { autoSendDrawings: "yes" }),
+  );
+  act(
+    room,
+    tokens[0],
+    "start",
+    { seconds: 15, mode: "chaos", ending: "auto" },
+    1000,
+  );
+  assert.equal(tick(room, 16000), true);
+  assert.ok(room.albums.every((album) => album[0].timedOut));
 });

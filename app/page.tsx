@@ -21,6 +21,8 @@ import {
   Users,
   X,
 } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
+import { timeOptionsFor, timeLabel } from "@/lib/settings";
 import Drawing from "@/components/Drawing";
 import type { GameMode, RoomView } from "@/lib/game";
 type Session = { code: string; token: string };
@@ -81,6 +83,7 @@ export default function Page() {
     [connection, setConnection] = useState(""),
     [phrase, setPhrase] = useState(""),
     [seconds, setSeconds] = useState(90),
+    [autoSendDrawings, setAutoSendDrawings] = useState(false),
     [gameMode, setGameMode] = useState<GameMode>("classic"),
     [exporting, setExporting] = useState(false),
     [exportProgress, setExportProgress] = useState(""),
@@ -113,7 +116,8 @@ export default function Page() {
     );
     if (r.status === "lobby") {
       setGameMode(r.mode);
-      setSeconds(r.seconds === 30 ? 90 : r.seconds);
+      setSeconds(r.seconds);
+      setAutoSendDrawings(r.autoSendDrawings);
       setEnding(r.ending);
     }
     setOffset(r.serverNow - Date.now());
@@ -189,10 +193,12 @@ export default function Page() {
         setSession(next);
       }
       accept(data.room);
+      return true;
     } catch (e) {
       setError(
         e instanceof Error ? e.message : "Algo deu errado. Tente novamente.",
       );
+      return false;
     } finally {
       setBusy(false);
     }
@@ -260,6 +266,7 @@ export default function Page() {
           <span className="brand-dot">✦</span>
         </button>
         <div className="header-right">
+          <ThemeToggle />
           <span className="online-dot" /> Feito para jogar junto{" "}
           <span className="header-separator" />
           <span className="little-tag">BETA</span>
@@ -572,14 +579,26 @@ export default function Page() {
                         disabled={busy || room.me !== room.hostId}
                         onChange={(e) => {
                           const next = e.target.value as GameMode;
+                          const nextSeconds =
+                            next === "lightning"
+                              ? 30
+                              : gameMode === "lightning"
+                                ? 90
+                                : seconds;
                           setGameMode(next);
-                          action("configure", { mode: next, seconds, ending });
+                          setSeconds(nextSeconds);
+                          action("configure", {
+                            mode: next,
+                            seconds: nextSeconds,
+                            ending,
+                            autoSendDrawings,
+                          });
                         }}
                       >
                         <option value="classic">Clássico</option>
                         <option value="chaos">Caos Criativo</option>
                         <option value="lightning">
-                          Relâmpago · 30 segundos
+                          Relâmpago · ritmo rápido
                         </option>
                       </select>
                     </label>
@@ -587,20 +606,15 @@ export default function Page() {
                       {gameMode === "chaos"
                         ? "Comece com um desenho livre. Receba o anterior como base e acrescente algo inesperado a cada rodada. Só desenhos, até o fim!"
                         : gameMode === "lightning"
-                          ? "Frases e desenhos como no Clássico, com apenas 30 segundos por rodada."
+                          ? "Frases e desenhos como no Clássico, com rodadas rápidas de 15 a 60 segundos."
                           : "Uma frase original vira desenho, depois adivinhação. Cada um vê apenas a etapa anterior."}
                     </p>
                     <label>
-                      {gameMode === "lightning"
-                        ? "Tempo por rodada · fixo em 30 segundos"
-                        : "Tempo por rodada"}
+                      Tempo por rodada
                       <select
+                        aria-label="Tempo por rodada"
                         value={seconds}
-                        disabled={
-                          busy ||
-                          room.me !== room.hostId ||
-                          gameMode === "lightning"
-                        }
+                        disabled={busy || room.me !== room.hostId}
                         onChange={(e) => {
                           setSeconds(+e.target.value);
                           action("configure", {
@@ -610,10 +624,11 @@ export default function Page() {
                           });
                         }}
                       >
-                        <option value={60}>1 minuto · rapidinho</option>
-                        <option value={90}>1 min 30 s · na medida</option>
-                        <option value={120}>2 minutos · com carinho</option>
-                        <option value={180}>3 minutos · obra-prima</option>
+                        {timeOptionsFor(gameMode).map((value) => (
+                          <option key={value} value={value}>
+                            {timeLabel(value)}
+                          </option>
+                        ))}
                       </select>
                     </label>
                     <label>
@@ -639,6 +654,28 @@ export default function Page() {
                         <option value="drawing">Com um desenho</option>
                       </select>
                     </label>
+                    <label className="auto-send-option">
+                      <input
+                        type="checkbox"
+                        checked={autoSendDrawings}
+                        disabled={busy || room.me !== room.hostId}
+                        onChange={(e) => {
+                          setAutoSendDrawings(e.target.checked);
+                          action("configure", {
+                            mode: gameMode,
+                            seconds,
+                            ending,
+                            autoSendDrawings: e.target.checked,
+                          });
+                        }}
+                      />
+                      <span>
+                        Enviar desenho ao acabar o tempo
+                        <small>
+                          Envia a tela como estiver, mesmo sem finalizar.
+                        </small>
+                      </span>
+                    </label>
                     <p className="settings-note">
                       {gameMode === "chaos"
                         ? "Todos criam o desenho inicial. Nas próximas rodadas, reinterpretam o desenho recebido acrescentando um novo elemento. Todos participam de cada álbum."
@@ -652,7 +689,12 @@ export default function Page() {
                         room.me !== room.hostId
                       }
                       onClick={() =>
-                        action("start", { seconds, ending, mode: gameMode })
+                        action("start", {
+                          seconds,
+                          ending,
+                          mode: gameMode,
+                          autoSendDrawings,
+                        })
                       }
                     >
                       <Play size={18} />
@@ -772,6 +814,7 @@ export default function Page() {
                         key={`${room.code}-${room.round}`}
                         busy={busy}
                         timeLeft={remaining}
+                        autoSend={room.autoSendDrawings}
                         reference={
                           room.previous?.kind === "phrase"
                             ? room.previous.value

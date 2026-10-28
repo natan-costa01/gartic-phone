@@ -1,3 +1,4 @@
+import { AUTO_SEND_GRACE_MS, timeOptionsFor } from "./settings";
 import { randomBytes, createHash } from "node:crypto";
 export type Entry = {
   kind: "phrase" | "drawing";
@@ -9,6 +10,7 @@ export type Player = { id: string; name: string; secret: string };
 export type GameMode = "classic" | "chaos" | "lightning";
 export type Room = {
   mode?: GameMode;
+  autoSendDrawings?: boolean;
   gameId?: string;
   code: string;
   version: number;
@@ -88,8 +90,16 @@ function advance(room: Room, now: number) {
     room.deadline = 0;
   } else room.deadline = now + room.seconds * 1000;
 }
+export function roundClosesAt(room: Room) {
+  return (
+    room.deadline +
+    (room.autoSendDrawings && kindAt(room.round, room.mode) === "drawing"
+      ? AUTO_SEND_GRACE_MS
+      : 0)
+  );
+}
 export function tick(room: Room, now = Date.now()) {
-  if (room.status !== "playing" || now < room.deadline) return false;
+  if (room.status !== "playing" || now < roundClosesAt(room)) return false;
   for (const p of room.players) {
     const a = room.albums[albumIndex(room, p.id)];
     if (a.length === room.round)
@@ -122,11 +132,15 @@ export function act(
     if (!["classic", "chaos", "lightning"].includes(String(mode)))
       throw new GameError("Modo inválido.");
     const seconds = Number(data.seconds ?? room.seconds);
-    if (![60, 90, 120, 180].includes(seconds))
+    if (!timeOptionsFor(String(mode)).includes(seconds))
       throw new GameError("Tempo inválido.");
     const ending = data.ending ?? room.ending;
     if (!["auto", "phrase", "drawing"].includes(String(ending)))
       throw new GameError("Final inválido.");
+    const autoSend = data.autoSendDrawings ?? room.autoSendDrawings ?? false;
+    if (typeof autoSend !== "boolean")
+      throw new GameError("Envio automático inválido.");
+    room.autoSendDrawings = autoSend;
     room.mode = mode as GameMode;
     room.seconds = seconds;
     room.ending = ending as Room["ending"];
@@ -136,16 +150,21 @@ export function act(
     if (room.status !== "lobby") throw new GameError("A partida já começou.");
     if (room.players.length < 2)
       throw new GameError("Convide pelo menos mais um jogador.");
-    if (![60, 90, 120, 180].includes(Number(data.seconds)))
-      throw new GameError("Tempo inválido.");
+
     if (!["auto", "phrase", "drawing"].includes(String(data.ending)))
       throw new GameError("Final inválido.");
     const mode = data.mode ?? room.mode ?? "classic";
     if (!["classic", "chaos", "lightning"].includes(String(mode)))
       throw new GameError("Modo inválido.");
+    if (!timeOptionsFor(String(mode)).includes(Number(data.seconds)))
+      throw new GameError("Tempo inválido.");
+    const autoSend = data.autoSendDrawings ?? room.autoSendDrawings ?? false;
+    if (typeof autoSend !== "boolean")
+      throw new GameError("Envio automático inválido.");
+    room.autoSendDrawings = autoSend;
     room.mode = mode as GameMode;
     room.gameId = id();
-    room.seconds = mode === "lightning" ? 30 : Number(data.seconds);
+    room.seconds = Number(data.seconds);
     room.ending =
       room.mode === "chaos" ? "drawing" : (data.ending as Room["ending"]);
     room.totalRounds = Math.max(3, room.players.length);
@@ -159,7 +178,11 @@ export function act(
     room.status = "playing";
     room.deadline = now + room.seconds * 1000;
   } else if (action === "submit") {
-    if (room.status !== "playing" || data.round !== room.round)
+    if (
+      room.status !== "playing" ||
+      data.round !== room.round ||
+      now >= roundClosesAt(room)
+    )
       throw new GameError("Esta rodada já terminou. Atualize sua tela.", 409);
     const album = room.albums[albumIndex(room, player.id)];
     if (album.length !== room.round)
@@ -191,7 +214,6 @@ export function act(
     room.albums = [];
     room.round = 0;
     room.totalRounds = 0;
-    if (room.seconds === 30) room.seconds = 90;
   } else if (action === "remove") {
     if (room.hostId !== player.id || room.status !== "lobby")
       throw new GameError(
@@ -220,6 +242,7 @@ export function view(room: Room, token: string, selectedAlbum = 0) {
   return {
     version: room.version,
     mode: room.mode ?? "classic",
+    autoSendDrawings: room.autoSendDrawings ?? false,
     gameId: room.gameId ?? `${room.createdAt}-${room.totalRounds}`,
     taskKind: kindAt(room.round, room.mode),
     code: room.code,

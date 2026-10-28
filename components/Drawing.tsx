@@ -44,16 +44,35 @@ export default function Drawing({
   initialImage,
   reference,
   timeLeft,
+  autoSend = false,
 }: {
-  onSubmit: (value: string) => void;
+  onSubmit: (value: string) => Promise<boolean>;
   busy: boolean;
   initialImage?: string;
   reference?: string;
   timeLeft?: number;
+  autoSend?: boolean;
 }) {
   const editor = useRef<HTMLDivElement>(null);
   const fullscreenButton = useRef<HTMLButtonElement>(null);
   const [expanded, setExpanded] = useState(false);
+  const [autoSending, setAutoSending] = useState(false);
+  const autoAttempted = useRef(false),
+    mounted = useRef(true),
+    submitRef = useRef(onSubmit),
+    busyRef = useRef(busy);
+  submitRef.current = onSubmit;
+  busyRef.current = busy;
+  const locked =
+    busy ||
+    autoSending ||
+    (autoSend && timeLeft !== undefined && timeLeft <= 0);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const canvas = useRef<HTMLCanvasElement>(null),
     history = useRef<{ image: ImageData; dirty: boolean }[]>([]),
     pointer = useRef<number | null>(null),
@@ -198,7 +217,7 @@ export default function Drawing({
     last.current = p;
   }
   function begin(e: React.PointerEvent<HTMLCanvasElement>) {
-    if (busy || !ready || pointer.current !== null) return;
+    if (locked || !ready || pointer.current !== null) return;
     const p = point(e);
     remember();
     if (tool === "bucket") {
@@ -224,7 +243,7 @@ export default function Drawing({
     }
   }
   function move(e: React.PointerEvent<HTMLCanvasElement>) {
-    if (pointer.current !== e.pointerId || !start.current || busy) return;
+    if (pointer.current !== e.pointerId || !start.current || locked) return;
     const p = point(e);
     if (tool === "brush" || tool === "eraser") brush(p);
     else {
@@ -269,20 +288,69 @@ export default function Drawing({
       setUndos(history.current.length);
     }
   }
-  function send() {
-    let value = "";
-    for (const quality of [0.8, 0.65, 0.45, 0.25]) {
-      value = canvas.current!.toDataURL("image/webp", quality);
-      if (value.length <= 180000) break;
+  function capture() {
+    const source = canvas.current!;
+    for (const scale of [1, 0.8, 0.6, 0.4]) {
+      const output = scale === 1 ? source : document.createElement("canvas");
+      if (scale !== 1) {
+        output.width = Math.round(source.width * scale);
+        output.height = Math.round(source.height * scale);
+        output
+          .getContext("2d")!
+          .drawImage(source, 0, 0, output.width, output.height);
+      }
+      for (const quality of [0.8, 0.65, 0.45, 0.25, 0.1]) {
+        const value = output.toDataURL("image/webp", quality);
+        if (value.length <= 180000) return value;
+      }
     }
-    if (value.length > 180000) {
-      setError(
-        "O desenho está muito detalhado para enviar. Desfaça alguns traços.",
-      );
+    throw new Error("Não foi possível preparar o desenho para envio.");
+  }
+  function send() {
+    try {
+      onSubmit(capture());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Não foi possível enviar.");
+    }
+  }
+  useEffect(() => {
+    if (
+      !autoSend ||
+      timeLeft === undefined ||
+      timeLeft > 0 ||
+      !ready ||
+      autoAttempted.current
+    )
+      return;
+    autoAttempted.current = true;
+    setAutoSending(true);
+    // Freeze the final canvas once: retries must send the exact same drawing.
+    let snapshot: string;
+    try {
+      snapshot = capture();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Falha ao preparar o desenho.");
+      setAutoSending(false);
       return;
     }
-    onSubmit(value);
-  }
+    void (async () => {
+      for (let attempt = 0; attempt < 3 && mounted.current; attempt++) {
+        if (busyRef.current) {
+          await new Promise((resolve) => setTimeout(resolve, 400));
+          if (!mounted.current) return;
+        }
+        if (await submitRef.current(snapshot)) return;
+        if (!mounted.current) return;
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+      if (mounted.current) {
+        setAutoSending(false);
+        setError(
+          "Não foi possível enviar automaticamente. Verifique sua conexão.",
+        );
+      }
+    })();
+  }, [autoSend, timeLeft, ready]);
   const shapeTool = tool !== "brush" && tool !== "eraser" && tool !== "bucket";
   return (
     <div
@@ -337,7 +405,14 @@ export default function Drawing({
           }}
         />
       </div>
-      <fieldset className="drawing-controls" disabled={busy || !ready}>
+      {autoSend && (
+        <p className="auto-send-status" role="status">
+          {autoSending
+            ? "Tempo esgotado. Enviando seu desenho…"
+            : "Envio automático ativado: seu desenho será enviado ao zerar o tempo."}
+        </p>
+      )}
+      <fieldset className="drawing-controls" disabled={locked || !ready}>
         <legend className="sr-only">Ferramentas de desenho</legend>
         <div className="tools drawing-toolbar">
           <div className="swatches">
@@ -473,7 +548,7 @@ export default function Drawing({
       )}
       <button
         className="primary submit"
-        disabled={!dirty || busy || !ready}
+        disabled={!dirty || locked || !ready}
         onClick={send}
       >
         {busy ? (
@@ -481,7 +556,7 @@ export default function Drawing({
         ) : (
           <Check size={18} />
         )}
-        Enviar desenho
+        {autoSending ? "Enviando automaticamente…" : "Enviar desenho"}
       </button>
     </div>
   );
