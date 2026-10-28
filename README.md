@@ -51,6 +51,12 @@ npm run build
 
 **Não use prefixo `NEXT_PUBLIC_` para essas credenciais.** Nunca coloque tokens no GitHub. Não precisa de Supabase, banco SQL, conta para jogadores, migração, WebSocket persistente ou servidor separado. O front-end consulta as salas a cada 2 segundos. Redis mantém as salas entre funções independentes da Vercel; uma operação atômica com versão evita perder jogadas simultâneas. Cada sala expira 24 horas após a criação.
 
+## Visual e tela cheia
+
+Interface espacial com azul claro, ciano e violeta, cartões luminosos e ilustração vetorial local animada (sem downloads de imagens ou GIFs externos). A animação respeita a preferência de movimento reduzido.
+
+No editor, clique em **Tela cheia** para ampliar sem perder o desenho. A referência, o cronômetro, as cores e o envio continuam disponíveis. Use o botão de saída ou **Escape** para voltar. Navegadores sem suporte nativo usam um painel ampliado com a mesma função. A tela branca de desenho mantém sua proporção, inclusive em celulares.
+
 ## Recursos
 
 - Sala privada por código e link, com anfitrião e remoção de jogadores antes do início.

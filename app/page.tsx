@@ -53,146 +53,21 @@ function Avatar({
 }
 function Illustration() {
   return (
-    <svg
-      className="hero-art"
-      viewBox="0 0 560 440"
-      role="img"
-      aria-label="Uma ideia se transforma em desenho e em uma nova história"
-    >
-      <defs>
-        <pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse">
-          <circle cx="2" cy="2" r="1" fill="#d6c9ed" />
-        </pattern>
-      </defs>
-      <circle cx="290" cy="215" r="180" fill="#eee7fb" />
-      <circle cx="290" cy="215" r="175" fill="url(#dots)" />
-      <path
-        d="M95 169 Q30 286 150 330 M435 114 Q530 154 474 281"
-        fill="none"
-        stroke="#bba4e0"
-        strokeWidth="3"
-        strokeDasharray="7 9"
+    <div className="orbit-scene">
+      <span className="orbit-label">
+        <span /> IMAGINAÇÃO SEM LIMITES
+      </span>
+      <img
+        className="hero-art"
+        src="/phoneart-orbit.svg"
+        alt="Estúdio holográfico com um planeta azul, lápis luminoso e ideias em órbita"
+        width={680}
+        height={580}
       />
-      <path
-        d="m142 315 12 20-24-3m329-61 10 17 13-17"
-        fill="none"
-        stroke="#bba4e0"
-        strokeWidth="3"
-      />
-      <g transform="translate(62 54) rotate(-9 110 64)">
-        <rect x="0" y="0" width="218" height="114" rx="18" fill="#d9c9f3" />
-        <rect
-          x="0"
-          y="-7"
-          width="218"
-          height="114"
-          rx="18"
-          fill="white"
-          stroke="#e5dcf2"
-          strokeWidth="2"
-        />
-        <text x="22" y="28" fontSize="12" fontWeight="700" fill="#9a83b7">
-          ERA UMA VEZ...
-        </text>
-        <text x="22" y="58" fontSize="16" fontWeight="700" fill="#514264">
-          Um gatinho viajando
-        </text>
-        <text x="22" y="82" fontSize="16" fontWeight="700" fill="#514264">
-          pelo espaço ✨
-        </text>
-      </g>
-      <g transform="translate(228 126) rotate(9 118 113)">
-        <rect width="234" height="224" rx="16" fill="#cbb4ec" />
-        <rect
-          y="-8"
-          width="234"
-          height="224"
-          rx="16"
-          fill="#fff"
-          stroke="#e3d7f1"
-          strokeWidth="2"
-        />
-        <rect x="12" y="5" width="210" height="183" rx="9" fill="#f7f2ff" />
-        <circle cx="117" cy="88" r="56" fill="#e8dcfa" />
-        <path
-          d="m81 80-7-33 30 17m29 1 29-18-7 38"
-          fill="#f4c993"
-          stroke="#655177"
-          strokeWidth="3"
-          strokeLinejoin="round"
-        />
-        <ellipse
-          cx="118"
-          cy="91"
-          rx="43"
-          ry="35"
-          fill="#f4c993"
-          stroke="#655177"
-          strokeWidth="3"
-        />
-        <path
-          d="M94 91h6m35 0h6m-26 12 4 3 4-3m-4 4v5m-26-10-19-3m18 11-18 5m70-13 19-3m-19 11 18 4"
-          fill="none"
-          stroke="#655177"
-          strokeWidth="3"
-          strokeLinecap="round"
-        />
-        <path
-          d="m88 120 3 30 55 0 4-30"
-          fill="#c2afe6"
-          stroke="#655177"
-          strokeWidth="3"
-        />
-        <ellipse
-          cx="119"
-          cy="152"
-          rx="47"
-          ry="9"
-          fill="#e0d1f3"
-          stroke="#655177"
-          strokeWidth="3"
-        />
-        <path
-          d="m52 49 4 9 10 2-8 6 1 10-8-6-9 4 3-10-6-7 11 1m130 59 3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1"
-          fill="#eac76f"
-        />
-        <circle cx="178" cy="39" r="4" fill="#bca6dc" />
-        <circle cx="52" cy="137" r="3" fill="#bca6dc" />
-        <text x="18" y="207" fill="#a391ba" fontSize="10">
-          um desenho, mil interpretações
-        </text>
-      </g>
-      <g transform="translate(55 306) rotate(-6)">
-        <rect
-          width="229"
-          height="81"
-          rx="17"
-          fill="white"
-          stroke="#e5dcf2"
-          strokeWidth="2"
-        />
-        <text x="18" y="29" fontSize="11" fontWeight="700" fill="#9a83b7">
-          EU ACHO QUE É...
-        </text>
-        <text x="18" y="56" fontSize="16" fontWeight="700" fill="#514264">
-          O primeiro gato astronauta!
-        </text>
-      </g>
-      <g transform="translate(441 306) rotate(25)">
-        <rect x="0" width="19" height="92" rx="5" fill="#a182d0" />
-        <path d="m0 85 9 23 10-23" fill="#efd9b7" />
-        <path d="m6 100 3 8 4-8" fill="#514264" />
-        <rect y="8" width="19" height="9" fill="#cfbceb" />
-      </g>
-      <path
-        d="m412 50 5 13 14 3-12 8-1 14-10-10-14 3 6-13-7-12 14 2"
-        fill="#e8bf65"
-      />
-      <path
-        d="m61 251 4 9 10 2-8 6-1 10-7-7-10 2 4-9-5-8 10 1"
-        fill="#baa0de"
-      />
-    </svg>
+      <span className="orbit-caption">
+        IDEIAS CONECTADAS. HISTÓRIAS IMPREVISÍVEIS.
+      </span>
+    </div>
   );
 }
 export default function Page() {
@@ -896,6 +771,14 @@ export default function Page() {
                       <Drawing
                         key={`${room.code}-${room.round}`}
                         busy={busy}
+                        timeLeft={remaining}
+                        reference={
+                          room.previous?.kind === "phrase"
+                            ? room.previous.value
+                            : room.mode === "chaos"
+                              ? "Reinterprete e acrescente um elemento inesperado."
+                              : undefined
+                        }
                         initialImage={
                           room.mode === "chaos"
                             ? room.previous?.value || undefined

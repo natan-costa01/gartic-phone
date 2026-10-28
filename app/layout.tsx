@@ -1,7 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/dm-sans";
 import "@fontsource-variable/outfit";
 import "./globals.css";
+export const viewport: Viewport = {
+  themeColor: "#080f20",
+  colorScheme: "dark",
+};
 export const metadata: Metadata = {
   title: "PhoneArt — a imaginação passa de mão em mão",
   description:
