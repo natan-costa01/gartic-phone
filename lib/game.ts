@@ -328,7 +328,7 @@ export function view(
     players: room.players.map((p) => ({
       id: p.id,
       name: p.name,
-      avatar: p.avatar ?? characterOf(undefined),
+      avatar: characterOf(p.avatar),
       submitted:
         room.status === "playing"
           ? room.albums[albumIndex(room, p.id)].length > room.round

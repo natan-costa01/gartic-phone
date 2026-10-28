@@ -4,8 +4,8 @@ import { Check, Shuffle, X } from "lucide-react";
 import {
   ANIMALS,
   CHARACTER_COLORS,
-  HATS,
-  GLASSES,
+  PORTRAITS,
+  CHARACTER_PRESETS,
   type Character,
 } from "@/lib/characters";
 import CharacterAvatar from "./CharacterAvatar";
@@ -19,6 +19,9 @@ export default function CharacterEditor({
   onClose: () => void;
 }) {
   const [draft, setDraft] = useState(initial),
+    [tab, setTab] = useState<"portraits" | "animals">(
+      PORTRAITS.some(([id]) => id === initial.animal) ? "portraits" : "animals",
+    ),
     [saving, setSaving] = useState(false),
     [error, setError] = useState("");
   const panel = useRef<HTMLDivElement>(null);
@@ -66,7 +69,7 @@ export default function CharacterEditor({
         ref={panel}
       >
         <div className="character-editor-top">
-          <span className="eyebrow">OFICINA DE PERSONAGENS</span>
+          <span className="eyebrow">Seu avatar</span>
           <button
             className="icon-button"
             onClick={onClose}
@@ -76,12 +79,12 @@ export default function CharacterEditor({
             <X size={19} />
           </button>
         </div>
-        <h2 id="character-title">Seu personagem, seu estilo.</h2>
+        <h2 id="character-title">Escolha quem vai jogar.</h2>
         <div className="character-customize">
           <div className="character-preview">
             <CharacterAvatar character={draft} size={168} />
             <strong>
-              {ANIMALS.find(([key]) => key === draft.animal)?.[1]}
+              {CHARACTER_PRESETS.find(([key]) => key === draft.animal)?.[1]}
             </strong>
             <button
               className="secondary"
@@ -89,8 +92,14 @@ export default function CharacterEditor({
               onClick={() =>
                 setDraft({
                   ...draft,
-                  animal:
-                    ANIMALS[Math.floor(Math.random() * ANIMALS.length)][0],
+                  animal: (tab === "portraits" ? PORTRAITS : ANIMALS)[
+                    Math.floor(
+                      Math.random() *
+                        (tab === "portraits"
+                          ? PORTRAITS.length
+                          : ANIMALS.length),
+                    )
+                  ][0],
                   color:
                     CHARACTER_COLORS[
                       Math.floor(Math.random() * CHARACTER_COLORS.length)
@@ -99,35 +108,57 @@ export default function CharacterEditor({
               }
             >
               <Shuffle size={15} />
-              Surpreenda-me
+              Escolher por mim
             </button>
           </div>
           <div className="character-options">
-            <span className="field-caption">ESCOLHA UM DOS 20 ANIMAIS</span>
-            <div className="animal-grid">
-              {ANIMALS.map(([animal, label]) => (
-                <button
-                  key={animal}
-                  disabled={saving}
-                  className={draft.animal === animal ? "selected" : ""}
-                  aria-label={label}
-                  aria-pressed={draft.animal === animal}
-                  title={label}
-                  onClick={() => setDraft({ ...draft, animal })}
-                >
-                  <CharacterAvatar
-                    character={{
-                      ...draft,
-                      animal,
-                      hat: "none",
-                      glasses: "none",
-                    }}
-                    size={43}
-                  />
-                </button>
-              ))}
+            <div
+              className="character-tabs"
+              role="group"
+              aria-label="Categoria de personagens"
+            >
+              <button
+                type="button"
+                aria-pressed={tab === "portraits"}
+                className={tab === "portraits" ? "selected" : ""}
+                onClick={() => setTab("portraits")}
+              >
+                Personagens <span>10</span>
+              </button>
+              <button
+                type="button"
+                aria-pressed={tab === "animals"}
+                className={tab === "animals" ? "selected" : ""}
+                onClick={() => setTab("animals")}
+              >
+                Animais <span>20</span>
+              </button>
             </div>
-            <span className="field-caption">COR DO PERSONAGEM</span>
+            <div className="animal-grid">
+              {(tab === "portraits" ? PORTRAITS : ANIMALS).map(
+                ([animal, label]) => (
+                  <button
+                    key={animal}
+                    disabled={saving}
+                    className={draft.animal === animal ? "selected" : ""}
+                    aria-label={label}
+                    aria-pressed={draft.animal === animal}
+                    title={label}
+                    onClick={() => setDraft({ ...draft, animal })}
+                  >
+                    <CharacterAvatar
+                      character={{
+                        ...draft,
+                        animal,
+                      }}
+                      size={54}
+                    />
+                    <span>{label}</span>
+                  </button>
+                ),
+              )}
+            </div>
+            <span className="field-caption">Cor do fundo</span>
             <div className="character-colors">
               {CHARACTER_COLORS.map((color) => (
                 <button
@@ -141,46 +172,6 @@ export default function CharacterEditor({
                 />
               ))}
             </div>
-            <label>
-              Chapéu
-              <select
-                aria-label="Chapéu do personagem"
-                value={draft.hat}
-                disabled={saving}
-                onChange={(e) =>
-                  setDraft({
-                    ...draft,
-                    hat: e.target.value as Character["hat"],
-                  })
-                }
-              >
-                {HATS.map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Óculos
-              <select
-                aria-label="Óculos do personagem"
-                value={draft.glasses}
-                disabled={saving}
-                onChange={(e) =>
-                  setDraft({
-                    ...draft,
-                    glasses: e.target.value as Character["glasses"],
-                  })
-                }
-              >
-                {GLASSES.map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
           </div>
         </div>
         {error && (

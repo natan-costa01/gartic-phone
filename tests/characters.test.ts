@@ -3,25 +3,68 @@ import assert from "node:assert/strict";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import CharacterAvatar from "../components/CharacterAvatar";
-import { ANIMALS, DEFAULT_CHARACTER, parseCharacter } from "../lib/characters";
+import {
+  ANIMALS,
+  PORTRAITS,
+  CHARACTER_PRESETS,
+  DEFAULT_CHARACTER,
+  parseCharacter,
+} from "../lib/characters";
 import { act, createRoom, join, view } from "../lib/game";
-test("20 animal presets render distinct SVG characters, including hat and glasses", () => {
+test("30 smooth presets include the photo-inspired avatar and all requested anime characters", () => {
   assert.equal(ANIMALS.length, 20);
-  const variants = ANIMALS.map(([animal]) =>
+  assert.equal(PORTRAITS.length, 10);
+  assert.deepEqual(
+    PORTRAITS.map(([id]) => id),
+    [
+      "portrait",
+      "naruto",
+      "goku",
+      "sasuke",
+      "sakura",
+      "luffy",
+      "nami",
+      "nezuko",
+      "gojo",
+      "tanjiro",
+    ],
+  );
+  const variants = CHARACTER_PRESETS.map(([animal]) =>
     renderToStaticMarkup(
       createElement(CharacterAvatar, {
         character: { ...DEFAULT_CHARACTER, animal },
       }),
     ),
   );
-  assert.equal(new Set(variants).size, 20);
-  assert.ok(variants.every((s) => s.includes("<svg")));
-  const gear = renderToStaticMarkup(
-    createElement(CharacterAvatar, {
-      character: { ...DEFAULT_CHARACTER, hat: "cap", glasses: "sun" },
+  assert.equal(new Set(variants).size, 30);
+  assert.ok(variants.every((s) => !s.includes("crispEdges")));
+  for (const [animal] of PORTRAITS) {
+    const markup = renderToStaticMarkup(
+      createElement(CharacterAvatar, {
+        character: { ...DEFAULT_CHARACTER, animal },
+      }),
+    );
+    assert.ok(markup.includes("portrait-image"));
+  }
+});
+test("legacy accessories are removed from saved characters and existing room views", () => {
+  assert.deepEqual(
+    parseCharacter({ ...DEFAULT_CHARACTER, hat: "cap", glasses: "sun" }),
+    DEFAULT_CHARACTER,
+  );
+  const { room, token } = createRoom("Ana");
+  room.players[0].avatar = JSON.parse(
+    JSON.stringify({
+      ...DEFAULT_CHARACTER,
+      animal: "cat",
+      hat: "beanie",
+      glasses: "round",
     }),
   );
-  assert.notEqual(gear, variants[0]);
+  const avatar = view(room, token).players[0].avatar;
+  assert.equal(avatar.animal, "cat");
+  assert.equal("hat" in avatar, false);
+  assert.equal("glasses" in avatar, false);
 });
 test("invalid character input is rejected and only structured preset data is accepted", () => {
   assert.deepEqual(parseCharacter(undefined), DEFAULT_CHARACTER);
@@ -41,8 +84,6 @@ test("create, join and own profile editing preserve validated character and perm
   const avatar = {
     ...DEFAULT_CHARACTER,
     animal: "elephant" as const,
-    hat: "cap" as const,
-    glasses: "round" as const,
   };
   const { room, token } = createRoom("Ana", Date.now(), avatar);
   const guest = join(room, "Bruno", { ...DEFAULT_CHARACTER, animal: "dog" });

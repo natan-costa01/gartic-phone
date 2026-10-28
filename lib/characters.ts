@@ -31,28 +31,24 @@ export const CHARACTER_COLORS = [
   "#cedce7",
   "#92d5d2",
 ] as const;
-export const HATS = [
-  ["none", "Sem chapéu"],
-  ["cap", "Boné"],
-  ["beanie", "Gorro"],
+export const PORTRAITS = [
+  ["portrait", "Rapaz da foto"],
+  ["naruto", "Naruto"],
+  ["goku", "Goku"],
+  ["sasuke", "Sasuke"],
+  ["sakura", "Sakura"],
+  ["luffy", "Luffy"],
+  ["nami", "Nami"],
+  ["nezuko", "Nezuko"],
+  ["gojo", "Gojo"],
+  ["tanjiro", "Tanjiro"],
 ] as const;
-export const GLASSES = [
-  ["none", "Sem óculos"],
-  ["round", "Óculos redondos"],
-  ["square", "Óculos quadrados"],
-  ["sun", "Óculos escuros"],
-] as const;
-export type Character = {
-  animal: Animal;
-  color: string;
-  hat: (typeof HATS)[number][0];
-  glasses: (typeof GLASSES)[number][0];
-};
+export const CHARACTER_PRESETS = [...PORTRAITS, ...ANIMALS] as const;
+export type CharacterId = (typeof CHARACTER_PRESETS)[number][0];
+export type Character = { animal: CharacterId; color: string };
 export const DEFAULT_CHARACTER: Character = {
-  animal: "dinosaur",
-  color: CHARACTER_COLORS[0],
-  hat: "none",
-  glasses: "none",
+  animal: "portrait",
+  color: CHARACTER_COLORS[6],
 };
 export function parseCharacter(value: unknown): Character {
   if (value === undefined) return { ...DEFAULT_CHARACTER };
@@ -60,16 +56,18 @@ export function parseCharacter(value: unknown): Character {
     throw Error("Personagem inválido.");
   const v = value as Record<string, unknown>;
   if (
-    !ANIMALS.some(([key]) => key === v.animal) ||
-    !CHARACTER_COLORS.some((c) => c === v.color) ||
-    !HATS.some(([key]) => key === v.hat) ||
-    !GLASSES.some(([key]) => key === v.glasses)
+    !CHARACTER_PRESETS.some(([key]) => key === v.animal) ||
+    !CHARACTER_COLORS.some((c) => c === v.color)
   )
-    throw Error("Escolha um animal, cor e acessórios válidos.");
-  return {
-    animal: v.animal as Animal,
-    color: v.color as string,
-    hat: v.hat as Character["hat"],
-    glasses: v.glasses as Character["glasses"],
-  };
+    throw Error("Escolha um personagem e uma cor válidos.");
+  // Accept and discard the former accessory fields so existing saved avatars
+  // and active rooms remain readable, without exposing accessory controls.
+  if (v.hat !== undefined && !["none", "cap", "beanie"].includes(String(v.hat)))
+    throw Error("Personagem inválido.");
+  if (
+    v.glasses !== undefined &&
+    !["none", "round", "square", "sun"].includes(String(v.glasses))
+  )
+    throw Error("Personagem inválido.");
+  return { animal: v.animal as CharacterId, color: v.color as string };
 }

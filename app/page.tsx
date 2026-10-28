@@ -56,39 +56,71 @@ function Avatar({
 }
 function Illustration() {
   return (
-    <div className="pixel-preview">
-      <div className="pixel-preview-top">
-        <span>● ● ●</span>
-        <span>PHONEART / CRIATIVIDADE.EXE</span>
+    <div
+      className="friends-illustration"
+      aria-label="Amigos transformam uma frase em desenho"
+    >
+      <div className="sketch-paper">
+        <span>Alguém escreve...</span>
+        <p>“Um gato de férias”</p>
+        <svg viewBox="0 0 280 195" fill="none" aria-hidden="true">
+          <path
+            d="M42 145c38-9 130-6 195 5M57 163c55-7 107-6 164-1"
+            stroke="#c4d6df"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
+          <path
+            d="m112 70-8-32 28 21m32 0 27-22-5 34"
+            fill="#e7ba89"
+            stroke="#53606e"
+            strokeWidth="3"
+            strokeLinejoin="round"
+          />
+          <ellipse
+            cx="149"
+            cy="87"
+            rx="43"
+            ry="36"
+            fill="#e7ba89"
+            stroke="#53606e"
+            strokeWidth="3"
+          />
+          <path
+            d="M124 86h8m35 0h8m-30 10 5 4 5-4m-5 6v6m-41-7-16-3m16 11-16 4m92-12 17-3m-17 11 17 4"
+            stroke="#53606e"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
+          <path
+            d="M132 124v28h38v-28"
+            fill="#b3c8eb"
+            stroke="#53606e"
+            strokeWidth="3"
+          />
+          <path
+            d="M201 137V67m-30 0c18-30 42-30 60 0h-60Z"
+            fill="#e9c2cd"
+            stroke="#78808b"
+            strokeWidth="2.5"
+          />
+          <circle cx="68" cy="48" r="15" fill="#f1d49a" />
+        </svg>
+        <small>...e alguém tenta desenhar.</small>
       </div>
-      <div className="pixel-preview-canvas">
-        <span className="pixel-spark s1">✦</span>
-        <span className="pixel-spark s2">+</span>
+      <div className="friend-card friend-main">
         <CharacterAvatar
-          character={{
-            animal: "dinosaur",
-            color: "#62d6a4",
-            hat: "cap",
-            glasses: "sun",
-          }}
-          size={218}
+          character={{ animal: "portrait", color: "#cedce7" }}
+          size={114}
         />
-        <div className="pixel-speech">
-          UM DINO
-          <br />
-          CHEIO DE IDEIAS_
-        </div>
-        <div className="pixel-pencil">✎</div>
+        <span>Vale qualquer ideia.</span>
       </div>
-      <div className="pixel-preview-bottom">
-        <div>
-          <span />
-          <span />
-          <span />
-          <span />
-          <span />
-        </div>
-        <span>IMAGINE → DESENHE → REINVENTE</span>
+      <div className="friend-card friend-anime">
+        <CharacterAvatar
+          character={{ animal: "naruto", color: "#ffb578" }}
+          size={84}
+        />
+        <span>Qualquer uma mesmo.</span>
       </div>
     </div>
   );
@@ -342,15 +374,13 @@ export default function Page() {
           <>
             <section className="hero">
               <div className="hero-copy">
-                <span className="eyebrow">
-                  <Sparkles size={14} /> TELEFONE SEM FIO, COM UM TOQUE DE ARTE
-                </span>
+                <span className="eyebrow">Para jogar com os amigos</span>
                 <h1>
-                  Sua ideia.
+                  Escreva uma frase.
                   <br />
-                  Outro desenho.
+                  Passe o desenho.
                   <br />
-                  <span>Uma boa confusão.</span>
+                  <span>Veja no que dá.</span>
                   <svg viewBox="0 0 380 16" aria-hidden="true">
                     <path
                       d="M4 10 Q160 -2 373 8M50 14Q220 5 330 13"
@@ -387,8 +417,8 @@ export default function Page() {
                     <Play size={18} />
                   </span>
                   <div>
-                    <h2>Todo mundo tem uma história pra estragar.</h2>
-                    <p>No melhor sentido possível. Vamos jogar?</p>
+                    <h2>Chame a turma.</h2>
+                    <p>Crie uma sala ou entre com um convite.</p>
                   </div>
                 </div>
                 <div className="tabs">
@@ -413,7 +443,7 @@ export default function Page() {
                   <CharacterAvatar character={character} size={54} />
                   <span>
                     <strong>Seu personagem</strong>
-                    <small>Escolha seu animal e acessórios</small>
+                    <small>Escolha seu personagem favorito</small>
                   </span>
                   <Pencil size={17} />
                 </button>
@@ -488,7 +518,7 @@ export default function Page() {
                 <span className="tip-doodle">
                   <Lightbulb size={27} />
                 </span>
-                <h3>Não sabe desenhar?</h3>
+                <h3>Não precisa desenhar bem.</h3>
                 <p>
                   Perfeito. Os melhores desenhos
                   <br />
@@ -1178,9 +1208,9 @@ export default function Page() {
         <span className="footer-brand">
           PhoneArt <span>✦</span>
         </span>
-        <span>Menos perfeição. Mais imaginação.</span>
+        <span>Um desenho de cada vez.</span>
         <span className="footer-love">
-          Feito para conectar pessoas <Heart size={13} />
+          Jogue com os amigos <Heart size={13} />
         </span>
       </footer>
     </>

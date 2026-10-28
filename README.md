@@ -53,7 +53,7 @@ npm run build
 
 ## Personagens e participantes
 
-Antes de criar ou entrar numa sala, use **Seu personagem**. Escolha entre 20 animais: dinossauro, cachorro, elefante, gato, coelho, raposa, urso, panda, tigre, leão, sapo, coruja, pinguim, macaco, porco, vaca, coala, guaxinim, lobo e lontra. Há oito cores, boné ou gorro, e óculos redondos, quadrados ou escuros. A prévia é atualizada enquanto você escolhe. A preferência fica salva no navegador.
+Antes de criar ou entrar numa sala, use **Seu personagem**. Escolha entre 20 animais: dinossauro, cachorro, elefante, gato, coelho, raposa, urso, panda, tigre, leão, sapo, coruja, pinguim, macaco, porco, vaca, coala, guaxinim, lobo e lontra. Também há 10 retratos prontos: um avatar inspirado na foto de referência, Naruto, Goku, Sasuke, Sakura, Luffy, Nami, Nezuko, Gojo e Tanjiro. O editor separa **Personagens** e **Animais**, com escolha de cor de fundo. Não há opções de boné, gorro ou óculos; acessórios antigos são removidos automaticamente ao ler os perfis salvos. Elementos que fazem parte do desenho original de cada personagem permanecem fixos. A prévia é atualizada enquanto você escolhe. A preferência fica salva no navegador.
 
 Na sala, **Editar personagem** permite mudar apenas o próprio avatar, mesmo durante a partida; a atualização aparece para todos. A barra lateral lista os participantes, seus personagens, o anfitrião e o estado da jogada (escrevendo, desenhando ou já enviou). No celular, o painel fica acima da área de jogo e mantém uma lista com rolagem.
 
@@ -73,7 +73,7 @@ Mantenha a página aberta e conectada: o canvas fica no navegador. Se o navegado
 
 O botão **Claro/Escuro**, no topo, troca o tema em todas as telas e salva a preferência neste navegador. O espaçamento é responsivo, com margens menores no celular e área de desenho mais ampla no desktop.
 
-Interface retrô inspirada em terminal e pixel art, com fundo quadriculado, molduras de jogo e detalhes em menta e ciano. Personagens são desenhos SVG próprios, sem downloads externos, e as fontes são servidas junto com o jogo. Os temas claro e escuro continuam disponíveis.
+Interface com tipografia DM Sans e Outfit, cores suaves, espaçamento consistente e cartões simples, sem efeito pixelado ou decoração de terminal. Os retratos ilustrados ficam na imagem local `public/characters/portraits.png`, organizada em cinco colunas e duas linhas; os animais usam SVG com curvas suaves. Fontes e imagens são servidas junto com o jogo, sem dependência de URLs externas. Os temas claro e escuro continuam disponíveis.
 
 No editor, clique em **Tela cheia** para ampliar sem perder o desenho. A referência, o cronômetro, as cores e o envio continuam disponíveis. Use o botão de saída ou **Escape** para voltar. Navegadores sem suporte nativo usam um painel ampliado com a mesma função. A tela branca de desenho mantém sua proporção, inclusive em celulares.
 
