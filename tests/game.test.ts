@@ -95,7 +95,13 @@ test("revealed albums are paginated to keep response sizes bounded", () => {
   const { room, tokens } = setup(3);
   act(room, tokens[0], "start", { seconds: 60, ending: "auto" }, 1000);
   while (room.status === "playing") tick(room, room.deadline);
-  const state = view(room, tokens[0], 2);
+  for (
+    let cursor = 0;
+    cursor < room.players.length * room.totalRounds - 1;
+    cursor++
+  )
+    act(room, tokens[0], "reveal", { direction: "next", cursor });
+  const state = view(room, tokens[0], 2, true);
   assert.equal(state.revealedAlbum, 2);
   assert.equal(state.albums?.[0].length, 0);
   assert.equal(state.albums?.[1].length, 0);
@@ -299,4 +305,56 @@ test("automatic drawing submission remains optional and host-controlled", () => 
   );
   assert.equal(tick(room, 16000), true);
   assert.ok(room.albums.every((album) => album[0].timedOut));
+});
+
+test("only the host controls a synchronized, step-by-step reveal without album query bypass", () => {
+  const { room, tokens } = setup(3);
+  act(room, tokens[0], "start", { seconds: 60, ending: "auto" }, 1000);
+  while (room.status === "playing") tick(room, room.deadline);
+  const first = view(room, tokens[1], 2);
+  assert.equal(first.revealedAlbum, 0);
+  assert.equal(first.revealStep, 0);
+  assert.equal(first.albums?.[0].length, 1);
+  assert.equal(first.albums?.[2].length, 0);
+  assert.equal(first.canExport, false);
+  assert.throws(
+    () => act(room, tokens[1], "reveal", { direction: "next", cursor: 0 }),
+    /anfitrião/,
+  );
+  assert.equal(room.revealCursor, 0);
+  assert.throws(() => view(room, tokens[1], 2, true), /PDF/);
+  act(room, tokens[0], "reveal", { direction: "next", cursor: 0 });
+  assert.equal(
+    view(room, tokens[0]).revealCursor,
+    view(room, tokens[1]).revealCursor,
+  );
+  assert.equal(view(room, tokens[1]).albums?.[0].length, 2);
+  assert.throws(
+    () => act(room, tokens[0], "reveal", { direction: "next", cursor: 0 }),
+    /avançou/,
+  );
+  for (let cursor = 1; cursor < 8; cursor++)
+    act(room, tokens[0], "reveal", { direction: "next", cursor });
+  assert.equal(view(room, tokens[1]).revealComplete, true);
+  assert.equal(view(room, tokens[1]).canExport, true);
+  assert.equal(view(room, tokens[1], 1, true).albums?.[1].length, 3);
+  assert.throws(
+    () => act(room, tokens[0], "reveal", { direction: "next", cursor: 8 }),
+    /Fim/,
+  );
+  act(room, tokens[0], "reveal", { direction: "previous", cursor: 8 });
+  assert.equal(view(room, tokens[1]).canExport, true);
+  act(room, tokens[0], "reset", {});
+  assert.equal(view(room, tokens[1]).canExport, false);
+  assert.equal(room.revealCursor, 0);
+});
+test("participant readiness is public without exposing submitted content", () => {
+  const { room, tokens } = setup(2);
+  act(room, tokens[0], "start", { seconds: 60, ending: "auto" }, 1000);
+  act(room, tokens[0], "submit", { round: 0, value: "segredo criativo" }, 2000);
+  const guest = view(room, tokens[1]);
+  assert.equal(guest.players[0].submitted, true);
+  assert.equal(guest.players[1].submitted, false);
+  assert.equal(guest.previous, null);
+  assert.equal(JSON.stringify(guest).includes("segredo criativo"), false);
 });

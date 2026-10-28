@@ -1,3 +1,4 @@
+import { parseCharacter, type Character } from "./characters";
 import { AUTO_SEND_GRACE_MS, timeOptionsFor } from "./settings";
 import { randomBytes, createHash } from "node:crypto";
 export type Entry = {
@@ -6,9 +7,16 @@ export type Entry = {
   playerId: string;
   timedOut?: boolean;
 };
-export type Player = { id: string; name: string; secret: string };
+export type Player = {
+  id: string;
+  name: string;
+  secret: string;
+  avatar?: Character;
+};
 export type GameMode = "classic" | "chaos" | "lightning";
 export type Room = {
+  revealCursor?: number;
+  allRevealed?: boolean;
   mode?: GameMode;
   autoSendDrawings?: boolean;
   gameId?: string;
@@ -41,9 +49,23 @@ export function nameOf(value: unknown) {
     throw new GameError("Use um nome de 1 a 24 caracteres.");
   return value.trim();
 }
-export function createRoom(name: unknown, now = Date.now()) {
+export function characterOf(value: unknown): Character {
+  try {
+    return parseCharacter(value);
+  } catch (e) {
+    throw new GameError(
+      e instanceof Error ? e.message : "Personagem inválido.",
+    );
+  }
+}
+export function createRoom(name: unknown, now = Date.now(), avatar?: unknown) {
   const token = id(),
-    player = { id: id(), name: nameOf(name), secret: hash(token) };
+    player = {
+      id: id(),
+      name: nameOf(name),
+      secret: hash(token),
+      avatar: characterOf(avatar),
+    };
   const code = Array.from(
     randomBytes(6),
     (b) => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[b % 32],
@@ -87,6 +109,8 @@ function advance(room: Room, now: number) {
   room.round++;
   if (room.round >= room.totalRounds) {
     room.status = "finished";
+    room.revealCursor = 0;
+    room.allRevealed = false;
     room.deadline = 0;
   } else room.deadline = now + room.seconds * 1000;
 }
@@ -122,7 +146,27 @@ export function act(
   now = Date.now(),
 ) {
   const player = authenticate(room, token);
-  if (action === "configure") {
+  if (action === "profile") {
+    if (data.playerId !== undefined && data.playerId !== player.id)
+      throw new GameError("Você só pode editar seu próprio personagem.", 403);
+    player.avatar = characterOf(data.avatar);
+  } else if (action === "reveal") {
+    if (room.status !== "finished" || room.hostId !== player.id)
+      throw new GameError("Só o anfitrião pode avançar a revelação.", 403);
+    const cursor = room.revealCursor ?? 0;
+    if (data.cursor !== cursor)
+      throw new GameError(
+        "A apresentação já avançou. Aguarde a atualização.",
+        409,
+      );
+    if (data.direction !== "next" && data.direction !== "previous")
+      throw new GameError("Direção inválida.");
+    const next = cursor + (data.direction === "next" ? 1 : -1),
+      last = room.players.length * room.totalRounds - 1;
+    if (next < 0 || next > last) throw new GameError("Fim da sequência.");
+    room.revealCursor = next;
+    if (next === last) room.allRevealed = true;
+  } else if (action === "configure") {
     if (room.hostId !== player.id || room.status !== "lobby")
       throw new GameError(
         "Apenas o anfitrião pode configurar a sala de espera.",
@@ -174,6 +218,8 @@ export function act(
     )
       room.totalRounds++;
     room.round = 0;
+    room.revealCursor = 0;
+    room.allRevealed = false;
     room.albums = room.players.map(() => []);
     room.status = "playing";
     room.deadline = now + room.seconds * 1000;
@@ -214,6 +260,8 @@ export function act(
     room.albums = [];
     room.round = 0;
     room.totalRounds = 0;
+    room.revealCursor = 0;
+    room.allRevealed = false;
   } else if (action === "remove") {
     if (room.hostId !== player.id || room.status !== "lobby")
       throw new GameError(
@@ -224,16 +272,44 @@ export function act(
     room.players = room.players.filter((p) => p.id !== data.playerId);
   } else throw new GameError("Ação inválida.");
 }
-export function join(room: Room, name: unknown) {
+export function join(room: Room, name: unknown, avatar?: unknown) {
   if (room.status !== "lobby")
     throw new GameError("Esta partida já começou. Entre na próxima!");
   if (room.players.length >= 20)
     throw new GameError("A sala está cheia (20 jogadores).");
   const token = id();
-  room.players.push({ id: id(), name: nameOf(name), secret: hash(token) });
+  room.players.push({
+    id: id(),
+    name: nameOf(name),
+    secret: hash(token),
+    avatar: characterOf(avatar),
+  });
   return token;
 }
-export function view(room: Room, token: string, selectedAlbum = 0) {
+export function view(
+  room: Room,
+  token: string,
+  selectedAlbum = 0,
+  exportAlbum = false,
+) {
+  const cursor = room.revealCursor ?? 0;
+  const revealAlbum = room.totalRounds
+    ? Math.floor(cursor / room.totalRounds)
+    : 0;
+  const revealStep = room.totalRounds ? cursor % room.totalRounds : 0;
+  const canExport = room.status === "finished" && !!room.allRevealed;
+  if (
+    exportAlbum &&
+    (!canExport ||
+      !Number.isInteger(selectedAlbum) ||
+      selectedAlbum < 0 ||
+      selectedAlbum >= room.players.length)
+  )
+    throw new GameError(
+      "Aguarde o anfitrião revelar toda a sequência para baixar o PDF.",
+      403,
+    );
+  const visibleAlbum = exportAlbum ? selectedAlbum : revealAlbum;
   const player = authenticate(room, token),
     album =
       room.status === "playing"
@@ -249,7 +325,15 @@ export function view(room: Room, token: string, selectedAlbum = 0) {
     status: room.status,
     hostId: room.hostId,
     me: player.id,
-    players: room.players.map(({ id, name }) => ({ id, name })),
+    players: room.players.map((p) => ({
+      id: p.id,
+      name: p.name,
+      avatar: p.avatar ?? characterOf(undefined),
+      submitted:
+        room.status === "playing"
+          ? room.albums[albumIndex(room, p.id)].length > room.round
+          : false,
+    })),
     round: room.round,
     totalRounds: room.totalRounds,
     deadline: room.deadline,
@@ -262,10 +346,20 @@ export function view(room: Room, token: string, selectedAlbum = 0) {
         ? room.albums.filter((a) => a.length > room.round).length
         : 0,
     previous: album && room.round > 0 ? album[room.round - 1] : null,
-    revealedAlbum: selectedAlbum,
+    revealCursor: cursor,
+    revealStep,
+    canExport,
+    revealComplete:
+      room.status === "finished" &&
+      cursor === room.players.length * room.totalRounds - 1,
+    revealedAlbum: visibleAlbum,
     albums:
       room.status === "finished"
-        ? room.albums.map((entries, i) => (i === selectedAlbum ? entries : []))
+        ? room.albums.map((entries, i) =>
+            i === visibleAlbum
+              ? entries.slice(0, exportAlbum ? entries.length : revealStep + 1)
+              : [],
+          )
         : null,
   };
 }

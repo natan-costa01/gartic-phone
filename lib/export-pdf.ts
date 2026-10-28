@@ -5,8 +5,10 @@ export async function exportGamePdf(
   session: Session,
   onProgress: (value: string) => void,
 ) {
-  if (snapshot.status !== "finished")
-    throw Error("Aguarde a revelação para baixar o PDF.");
+  if (snapshot.status !== "finished" || !snapshot.canExport)
+    throw Error(
+      "Aguarde o anfitrião revelar toda a sequência para baixar o PDF.",
+    );
   const { jsPDF } = await import("jspdf");
   await document.fonts.ready;
   const pdf = new jsPDF({ unit: "mm", format: "a4", compress: true });
@@ -40,7 +42,7 @@ export async function exportGamePdf(
   for (let album = 0; album < snapshot.players.length; album++) {
     onProgress(`Preparando álbum ${album + 1}/${snapshot.players.length}…`);
     const response = await fetch(
-      `/api/rooms?code=${session.code}&album=${album}`,
+      `/api/rooms?code=${session.code}&album=${album}&export=1`,
       { headers: { "x-player-token": session.token }, cache: "no-store" },
     );
     const data = await response.json();

@@ -54,7 +54,16 @@ export async function GET(req: NextRequest) {
     if (!Number.isInteger(album) || album < 0 || album >= room.players.length)
       throw new GameError("Álbum inválido.");
     return NextResponse.json(
-      { room: await hydrate(view(room, token, album)) },
+      {
+        room: await hydrate(
+          view(
+            room,
+            token,
+            album,
+            req.nextUrl.searchParams.get("export") === "1",
+          ),
+        ),
+      },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (e) {
@@ -78,7 +87,7 @@ export async function POST(req: NextRequest) {
       throw new GameError("Requisição inválida.");
     if (data.action === "create") {
       for (let i = 0; i < 5; i++) {
-        const { room, token } = createRoom(data.name);
+        const { room, token } = createRoom(data.name, Date.now(), data.avatar);
         if (await insert(room))
           return NextResponse.json({
             token,
@@ -90,7 +99,7 @@ export async function POST(req: NextRequest) {
     const code = codeOf(data.code);
     if (data.action === "join") {
       const { room, result: token } = await mutate(code, (r) =>
-        join(r, data.name),
+        join(r, data.name, data.avatar),
       );
       return NextResponse.json({
         token,

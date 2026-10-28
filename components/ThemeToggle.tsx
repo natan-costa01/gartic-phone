@@ -13,7 +13,7 @@ export default function ThemeToggle() {
     document.documentElement.style.colorScheme = next;
     document
       .querySelector('meta[name="theme-color"]')
-      ?.setAttribute("content", next === "light" ? "#f0f7ff" : "#080f20");
+      ?.setAttribute("content", next === "light" ? "#edf7f2" : "#0a1719");
     setTheme(next);
     try {
       localStorage.setItem("phoneart-theme", next);

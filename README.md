@@ -9,7 +9,7 @@ Telefone sem fio com desenhos, em português, para **2 a 20 jogadores online**. 
 3. Cada álbum passa para o próximo jogador: ele desenha a frase recebida.
 4. O próximo jogador vê **só o desenho anterior** e tenta adivinhá-lo. A adivinhação vira a referência do próximo desenho.
 5. As rodadas alternam até todos participarem de cada álbum. Há no mínimo três rodadas para que mesmo duas pessoas possam desenhar e adivinhar. O anfitrião escolhe uma volta completa, terminar em frase ou terminar em desenho. Um final escolhido pode acrescentar uma rodada, fazendo o álbum retornar ao autor.
-6. O fim revela todas as transformações, com os nomes dos participantes. O anfitrião pode iniciar outra partida.
+6. O anfitrião conduz a revelação **uma etapa por vez**, com todos vendo o mesmo álbum. Apenas ele pode avançar, voltar ou iniciar outra partida. Depois de apresentar a sequência toda, todos podem baixar o PDF.
 
 ## Modos de jogo
 
@@ -51,6 +51,18 @@ npm run build
 
 **Não use prefixo `NEXT_PUBLIC_` para essas credenciais.** Nunca coloque tokens no GitHub. Não precisa de Supabase, banco SQL, conta para jogadores, migração, WebSocket persistente ou servidor separado. O front-end consulta as salas a cada 2 segundos. Redis mantém as salas entre funções independentes da Vercel; uma operação atômica com versão evita perder jogadas simultâneas. Cada sala expira 24 horas após a criação.
 
+## Personagens e participantes
+
+Antes de criar ou entrar numa sala, use **Seu personagem**. Escolha entre 20 animais: dinossauro, cachorro, elefante, gato, coelho, raposa, urso, panda, tigre, leão, sapo, coruja, pinguim, macaco, porco, vaca, coala, guaxinim, lobo e lontra. Há oito cores, boné ou gorro, e óculos redondos, quadrados ou escuros. A prévia é atualizada enquanto você escolhe. A preferência fica salva no navegador.
+
+Na sala, **Editar personagem** permite mudar apenas o próprio avatar, mesmo durante a partida; a atualização aparece para todos. A barra lateral lista os participantes, seus personagens, o anfitrião e o estado da jogada (escrevendo, desenhando ou já enviou). No celular, o painel fica acima da área de jogo e mantém uma lista com rolagem.
+
+## Revelação em grupo
+
+A apresentação começa na primeira etapa do primeiro álbum. **Só o anfitrião** pode usar **Revelar próxima etapa**, **Próximo álbum** e **Voltar etapa**. A navegação é sincronizada pelo servidor, com atualização dos navegadores a cada dois segundos. Pedidos de convidados para avançar são rejeitados; alterar o parâmetro `album` também não revela etapas futuras. O PDF completo só é liberado quando o anfitrião chegar ao fim de todos os álbuns. Depois disso, todos podem exportá-lo, mesmo que ele volte a uma etapa anterior. Um reinício limpa essa autorização para a próxima partida.
+
+A passagem automática das rodadas de criação continua funcionando como antes. O controle exclusivo do anfitrião se aplica à apresentação final.
+
 ## Envio automático no fim do tempo
 
 O anfitrião pode ativar **Enviar desenho ao acabar o tempo** na sala de espera. A opção vale para todos e para os três modos. Ao zerar o cronômetro de uma rodada de desenho, o navegador congela o canvas e envia exatamente o que estiver nele, inclusive um desenho incompleto ou uma tela ainda em branco. O desenho é comprimido para caber no limite de envio; telas muito detalhadas podem ter a resolução reduzida sem apagar traços. A janela do servidor tem cinco segundos de tolerância para receber o envio final, sem alterar o tempo exibido de desenho. As frases continuam respeitando o prazo normal.
@@ -61,7 +73,7 @@ Mantenha a página aberta e conectada: o canvas fica no navegador. Se o navegado
 
 O botão **Claro/Escuro**, no topo, troca o tema em todas as telas e salva a preferência neste navegador. O espaçamento é responsivo, com margens menores no celular e área de desenho mais ampla no desktop.
 
-Interface espacial com azul claro, ciano e violeta, cartões luminosos e ilustração vetorial local animada (sem downloads de imagens ou GIFs externos). A animação respeita a preferência de movimento reduzido.
+Interface retrô inspirada em terminal e pixel art, com fundo quadriculado, molduras de jogo e detalhes em menta e ciano. Personagens são desenhos SVG próprios, sem downloads externos, e as fontes são servidas junto com o jogo. Os temas claro e escuro continuam disponíveis.
 
 No editor, clique em **Tela cheia** para ampliar sem perder o desenho. A referência, o cronômetro, as cores e o envio continuam disponíveis. Use o botão de saída ou **Escape** para voltar. Navegadores sem suporte nativo usam um painel ampliado com a mesma função. A tela branca de desenho mantém sua proporção, inclusive em celulares.
 
@@ -72,7 +84,7 @@ No editor, clique em **Tela cheia** para ampliar sem perder o desenho. A referê
 - Canvas com mouse, caneta e toque; **16 cores**, seletor personalizado, espessura, borracha, desfazer e limpar.
 - **Balde de tinta** para áreas conectadas/fechadas, com desfazer.
 - **Dez formas** com prévia ao arrastar: linha, círculo, elipse, quadrado, retângulo, triângulo, pentágono, hexágono, estrela e seta. Formas fechadas têm opções de contorno e preenchimento na cor selecionada. Desfazer preserva as 15 ações anteriores.
-- **Salvar sequência completa em PDF**, disponível a todos após o fim: exporta todos os álbuns, desenhos, frases, autores e ordem das rodadas. O arquivo é gerado no navegador, carregando um álbum por vez, sem credenciais ou serviço adicional. Salve antes que o anfitrião inicie outra partida; se a partida mudar durante o download, o exportador interrompe com um aviso para não misturar sequências.
+- **Salvar sequência completa em PDF**, disponível a todos após o fim: exporta todos os álbuns, desenhos, frases, autores e ordem das rodadas. O arquivo é gerado no navegador, carregando um álbum por vez, sem credenciais ou serviço adicional. O download é liberado depois que o anfitrião apresentar todos os álbuns. Salve antes que ele inicie outra partida; se a partida mudar durante o download, o exportador interrompe com um aviso para não misturar sequências.
 - Álbuns completos só ficam disponíveis após o encerramento. Segredos de sessão são armazenados com hash e nunca retornam na lista de jogadores.
 - Interface responsiva para celular e desktop; temporizador e contagem de envios sincronizados pelo servidor.
 
