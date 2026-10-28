@@ -54,6 +54,7 @@ export const PORTRAITS = [
   ["kakashi", "Kakashi"],
   ["lula", "Lula"],
   ["bolsonaro", "Bolsonaro"],
+  ["ciro", "Ciro Gomes"],
 ] as const;
 export const CHARACTER_PRESETS = PORTRAITS;
 export type CharacterId = (typeof CHARACTER_PRESETS)[number][0];
@@ -92,6 +93,12 @@ export function portraitSprite(id: CharacterId): {
   position: string;
   size?: string;
 } {
+  if (id === "ciro")
+    return {
+      image: "/characters/ciro.png",
+      position: "50% 50%",
+      size: "100% 100%",
+    };
   if (id === "lula" || id === "bolsonaro")
     return {
       image: "/characters/public-figures.png",
