@@ -4,16 +4,15 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import CharacterAvatar from "../components/CharacterAvatar";
 import {
-  ANIMALS,
   PORTRAITS,
   CHARACTER_PRESETS,
   DEFAULT_CHARACTER,
   parseCharacter,
+  portraitSprite,
 } from "../lib/characters";
 import { act, createRoom, join, view } from "../lib/game";
-test("30 smooth presets include the photo-inspired avatar and all requested anime characters", () => {
-  assert.equal(ANIMALS.length, 20);
-  assert.equal(PORTRAITS.length, 10);
+test("20 illustrated presets include the photo avatar and expanded anime roster", () => {
+  assert.equal(PORTRAITS.length, 20);
   assert.deepEqual(
     PORTRAITS.map(([id]) => id),
     [
@@ -27,6 +26,16 @@ test("30 smooth presets include the photo-inspired avatar and all requested anim
       "nezuko",
       "gojo",
       "tanjiro",
+      "rudeus",
+      "yuji",
+      "zenitsu",
+      "hinata",
+      "levi",
+      "mikasa",
+      "ichigo",
+      "vegeta",
+      "killua",
+      "kakashi",
     ],
   );
   const variants = CHARACTER_PRESETS.map(([animal]) =>
@@ -36,7 +45,7 @@ test("30 smooth presets include the photo-inspired avatar and all requested anim
       }),
     ),
   );
-  assert.equal(new Set(variants).size, 30);
+  assert.equal(new Set(variants).size, 20);
   assert.ok(variants.every((s) => !s.includes("crispEdges")));
   for (const [animal] of PORTRAITS) {
     const markup = renderToStaticMarkup(
@@ -62,7 +71,7 @@ test("legacy accessories are removed from saved characters and existing room vie
     }),
   );
   const avatar = view(room, token).players[0].avatar;
-  assert.equal(avatar.animal, "cat");
+  assert.equal(avatar.animal, "portrait");
   assert.equal("hat" in avatar, false);
   assert.equal("glasses" in avatar, false);
 });
@@ -83,14 +92,14 @@ test("invalid character input is rejected and only structured preset data is acc
 test("create, join and own profile editing preserve validated character and permissions", () => {
   const avatar = {
     ...DEFAULT_CHARACTER,
-    animal: "elephant" as const,
+    animal: "rudeus" as const,
   };
   const { room, token } = createRoom("Ana", Date.now(), avatar);
-  const guest = join(room, "Bruno", { ...DEFAULT_CHARACTER, animal: "dog" });
+  const guest = join(room, "Bruno", { ...DEFAULT_CHARACTER, animal: "yuji" });
   assert.deepEqual(view(room, guest).players[0].avatar, avatar);
-  act(room, guest, "profile", { avatar: { ...avatar, animal: "cat" } });
-  assert.equal(view(room, token).players[1].avatar.animal, "cat");
-  assert.equal(view(room, token).players[0].avatar.animal, "elephant");
+  act(room, guest, "profile", { avatar: { ...avatar, animal: "zenitsu" } });
+  assert.equal(view(room, token).players[1].avatar.animal, "zenitsu");
+  assert.equal(view(room, token).players[0].avatar.animal, "rudeus");
   assert.throws(
     () => act(room, guest, "profile", { playerId: room.hostId, avatar }),
     /próprio/,
@@ -98,9 +107,60 @@ test("create, join and own profile editing preserve validated character and perm
   assert.throws(() =>
     act(room, guest, "profile", { avatar: { ...avatar, hat: "invalid" } }),
   );
-  assert.equal(view(room, token).players[1].avatar.animal, "cat");
+  assert.equal(view(room, token).players[1].avatar.animal, "zenitsu");
   act(room, token, "start", { seconds: 60, ending: "auto" });
   act(room, guest, "profile", { avatar });
-  assert.equal(view(room, token).players[1].avatar.animal, "elephant");
+  assert.equal(view(room, token).players[1].avatar.animal, "rudeus");
   assert.equal("secret" in view(room, token).players[1], false);
+});
+
+test("retired animals migrate to the default portrait while preserving background color", () => {
+  for (const animal of [
+    "dinosaur",
+    "dog",
+    "elephant",
+    "cat",
+    "rabbit",
+    "fox",
+    "bear",
+    "panda",
+    "tiger",
+    "lion",
+    "frog",
+    "owl",
+    "penguin",
+    "monkey",
+    "pig",
+    "cow",
+    "koala",
+    "raccoon",
+    "wolf",
+    "otter",
+  ])
+    assert.deepEqual(parseCharacter({ animal, color: "#74bfff" }), {
+      animal: "portrait",
+      color: "#74bfff",
+    });
+});
+test("portrait sheets keep the original portraits stable and map each new portrait to its proper grid cell", () => {
+  assert.deepEqual(portraitSprite("portrait"), {
+    image: "/characters/portraits.png",
+    position: "0% 0%",
+  });
+  assert.deepEqual(portraitSprite("tanjiro"), {
+    image: "/characters/portraits.png",
+    position: "100% 100%",
+  });
+  assert.deepEqual(portraitSprite("rudeus"), {
+    image: "/characters/portraits-extra.png",
+    position: "0% 0%",
+  });
+  assert.deepEqual(portraitSprite("hinata"), {
+    image: "/characters/portraits-extra.png",
+    position: "75% 0%",
+  });
+  assert.deepEqual(portraitSprite("kakashi"), {
+    image: "/characters/portraits-extra.png",
+    position: "100% 100%",
+  });
 });

@@ -1513,10 +1513,6 @@ footer {
   display: block;
   flex-shrink: 0;
 }
-.animal-avatar {
-  border-radius: 50%;
-  overflow: hidden;
-}
 .portrait-avatar {
   display: block;
   position: relative;
@@ -1528,7 +1524,6 @@ footer {
   display: block;
   position: absolute;
   inset: 0;
-  background-image: url("/characters/portraits.png");
   background-size: 500% 200%;
   background-repeat: no-repeat;
 }
@@ -1610,40 +1605,13 @@ footer {
   padding: 8px;
   min-height: 36px;
 }
-.character-tabs {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  border-bottom: 1px solid var(--line);
-  margin-bottom: 17px;
-  padding-bottom: 12px;
-}
-.character-tabs button {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  background: none;
-  border: 1px solid transparent;
-  color: var(--muted);
-  border-radius: 7px;
-  font-size: 11px;
-  padding: 8px 10px;
-}
-.character-tabs button.selected {
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-.character-tabs button > span {
-  font-size: 10px;
-  opacity: 0.65;
-}
-.animal-grid {
+.character-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 22px;
 }
-.animal-grid button {
+.character-grid button {
   display: flex;
   align-items: center;
   flex-direction: column;
@@ -1655,20 +1623,20 @@ footer {
   border-radius: 10px;
   min-width: 0;
 }
-.animal-grid button.selected {
+.character-grid button.selected {
   border-color: var(--accent);
   background: var(--accent-soft);
 }
-.animal-grid button:hover {
+.character-grid button:hover {
   background: var(--surface-raised);
 }
-.animal-grid button > span:last-child:not(.character-avatar) {
+.character-grid button > span:last-child:not(.character-avatar) {
   font-size: 9px;
   color: var(--muted);
   line-height: 1.3;
   text-align: center;
 }
-.animal-grid .character-avatar {
+.character-grid .character-avatar {
   width: 50px !important;
   height: 50px !important;
 }
@@ -2401,21 +2369,18 @@ footer {
   .character-preview .secondary {
     font-size: 10px;
   }
-  .character-tabs {
-    margin-bottom: 14px;
-  }
-  .animal-grid {
+  .character-grid {
     gap: 7px;
   }
-  .animal-grid .character-avatar {
+  .character-grid .character-avatar {
     width: 43px !important;
     height: 43px !important;
   }
-  .animal-grid button {
+  .character-grid button {
     padding: 7px 2px;
     gap: 5px;
   }
-  .animal-grid button > span:last-child:not(.character-avatar) {
+  .character-grid button > span:last-child:not(.character-avatar) {
     font-size: 8px;
   }
   .character-editor-footer {

@@ -2,7 +2,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Shuffle, X } from "lucide-react";
 import {
-  ANIMALS,
   CHARACTER_COLORS,
   PORTRAITS,
   CHARACTER_PRESETS,
@@ -19,9 +18,6 @@ export default function CharacterEditor({
   onClose: () => void;
 }) {
   const [draft, setDraft] = useState(initial),
-    [tab, setTab] = useState<"portraits" | "animals">(
-      PORTRAITS.some(([id]) => id === initial.animal) ? "portraits" : "animals",
-    ),
     [saving, setSaving] = useState(false),
     [error, setError] = useState("");
   const panel = useRef<HTMLDivElement>(null);
@@ -92,14 +88,8 @@ export default function CharacterEditor({
               onClick={() =>
                 setDraft({
                   ...draft,
-                  animal: (tab === "portraits" ? PORTRAITS : ANIMALS)[
-                    Math.floor(
-                      Math.random() *
-                        (tab === "portraits"
-                          ? PORTRAITS.length
-                          : ANIMALS.length),
-                    )
-                  ][0],
+                  animal:
+                    PORTRAITS[Math.floor(Math.random() * PORTRAITS.length)][0],
                   color:
                     CHARACTER_COLORS[
                       Math.floor(Math.random() * CHARACTER_COLORS.length)
@@ -112,51 +102,30 @@ export default function CharacterEditor({
             </button>
           </div>
           <div className="character-options">
-            <div
-              className="character-tabs"
-              role="group"
-              aria-label="Categoria de personagens"
-            >
-              <button
-                type="button"
-                aria-pressed={tab === "portraits"}
-                className={tab === "portraits" ? "selected" : ""}
-                onClick={() => setTab("portraits")}
-              >
-                Personagens <span>10</span>
-              </button>
-              <button
-                type="button"
-                aria-pressed={tab === "animals"}
-                className={tab === "animals" ? "selected" : ""}
-                onClick={() => setTab("animals")}
-              >
-                Animais <span>20</span>
-              </button>
-            </div>
-            <div className="animal-grid">
-              {(tab === "portraits" ? PORTRAITS : ANIMALS).map(
-                ([animal, label]) => (
-                  <button
-                    key={animal}
-                    disabled={saving}
-                    className={draft.animal === animal ? "selected" : ""}
-                    aria-label={label}
-                    aria-pressed={draft.animal === animal}
-                    title={label}
-                    onClick={() => setDraft({ ...draft, animal })}
-                  >
-                    <CharacterAvatar
-                      character={{
-                        ...draft,
-                        animal,
-                      }}
-                      size={54}
-                    />
-                    <span>{label}</span>
-                  </button>
-                ),
-              )}
+            <span className="field-caption">
+              {PORTRAITS.length} personagens para escolher
+            </span>
+            <div className="character-grid">
+              {PORTRAITS.map(([animal, label]) => (
+                <button
+                  key={animal}
+                  disabled={saving}
+                  className={draft.animal === animal ? "selected" : ""}
+                  aria-label={label}
+                  aria-pressed={draft.animal === animal}
+                  title={label}
+                  onClick={() => setDraft({ ...draft, animal })}
+                >
+                  <CharacterAvatar
+                    character={{
+                      ...draft,
+                      animal,
+                    }}
+                    size={54}
+                  />
+                  <span>{label}</span>
+                </button>
+              ))}
             </div>
             <span className="field-caption">Cor do fundo</span>
             <div className="character-colors">

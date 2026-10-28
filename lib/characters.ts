@@ -1,26 +1,26 @@
-export const ANIMALS = [
-  ["dinosaur", "Dinossauro"],
-  ["dog", "Cachorro"],
-  ["elephant", "Elefante"],
-  ["cat", "Gato"],
-  ["rabbit", "Coelho"],
-  ["fox", "Raposa"],
-  ["bear", "Urso"],
-  ["panda", "Panda"],
-  ["tiger", "Tigre"],
-  ["lion", "Leão"],
-  ["frog", "Sapo"],
-  ["owl", "Coruja"],
-  ["penguin", "Pinguim"],
-  ["monkey", "Macaco"],
-  ["pig", "Porco"],
-  ["cow", "Vaca"],
-  ["koala", "Coala"],
-  ["raccoon", "Guaxinim"],
-  ["wolf", "Lobo"],
-  ["otter", "Lontra"],
+// Retained only to migrate earlier profiles and active rooms. Not selectable.
+const LEGACY_ANIMAL_IDS = [
+  "dinosaur",
+  "dog",
+  "elephant",
+  "cat",
+  "rabbit",
+  "fox",
+  "bear",
+  "panda",
+  "tiger",
+  "lion",
+  "frog",
+  "owl",
+  "penguin",
+  "monkey",
+  "pig",
+  "cow",
+  "koala",
+  "raccoon",
+  "wolf",
+  "otter",
 ] as const;
-export type Animal = (typeof ANIMALS)[number][0];
 export const CHARACTER_COLORS = [
   "#62d6a4",
   "#74bfff",
@@ -42,8 +42,18 @@ export const PORTRAITS = [
   ["nezuko", "Nezuko"],
   ["gojo", "Gojo"],
   ["tanjiro", "Tanjiro"],
+  ["rudeus", "Rudeus Greyrat"],
+  ["yuji", "Yuji Itadori"],
+  ["zenitsu", "Zenitsu"],
+  ["hinata", "Hinata Hyuga"],
+  ["levi", "Levi"],
+  ["mikasa", "Mikasa"],
+  ["ichigo", "Ichigo"],
+  ["vegeta", "Vegeta"],
+  ["killua", "Killua"],
+  ["kakashi", "Kakashi"],
 ] as const;
-export const CHARACTER_PRESETS = [...PORTRAITS, ...ANIMALS] as const;
+export const CHARACTER_PRESETS = PORTRAITS;
 export type CharacterId = (typeof CHARACTER_PRESETS)[number][0];
 export type Character = { animal: CharacterId; color: string };
 export const DEFAULT_CHARACTER: Character = {
@@ -55,8 +65,11 @@ export function parseCharacter(value: unknown): Character {
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw Error("Personagem inválido.");
   const v = value as Record<string, unknown>;
+  const characterId = LEGACY_ANIMAL_IDS.some((id) => id === v.animal)
+    ? DEFAULT_CHARACTER.animal
+    : v.animal;
   if (
-    !CHARACTER_PRESETS.some(([key]) => key === v.animal) ||
+    !CHARACTER_PRESETS.some(([key]) => key === characterId) ||
     !CHARACTER_COLORS.some((c) => c === v.color)
   )
     throw Error("Escolha um personagem e uma cor válidos.");
@@ -69,5 +82,18 @@ export function parseCharacter(value: unknown): Character {
     !["none", "round", "square", "sun"].includes(String(v.glasses))
   )
     throw Error("Personagem inválido.");
-  return { animal: v.animal as CharacterId, color: v.color as string };
+  return { animal: characterId as CharacterId, color: v.color as string };
+}
+
+export function portraitSprite(id: CharacterId) {
+  const found = PORTRAITS.findIndex(([key]) => key === id),
+    index = found < 0 ? 0 : found;
+  const cell = index % 10;
+  return {
+    image:
+      index < 10
+        ? "/characters/portraits.png"
+        : "/characters/portraits-extra.png",
+    position: `${(cell % 5) * 25}% ${cell < 5 ? 0 : 100}%`,
+  };
 }
