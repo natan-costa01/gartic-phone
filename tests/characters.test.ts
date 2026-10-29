@@ -11,8 +11,8 @@ import {
   portraitSprite,
 } from "../lib/characters";
 import { act, createRoom, join, view } from "../lib/game";
-test("23 illustrated presets include Vitor, the anime roster and three public figures", () => {
-  assert.equal(PORTRAITS.length, 23);
+test("25 illustrated presets include Vitor, the anime roster and three public figures", () => {
+  assert.equal(PORTRAITS.length, 25);
   assert.deepEqual(
     PORTRAITS.map(([id]) => id),
     [
@@ -39,6 +39,8 @@ test("23 illustrated presets include Vitor, the anime roster and three public fi
       "lula",
       "bolsonaro",
       "ciro",
+      "evandro",
+      "ratoswaldo",
     ],
   );
   const variants = CHARACTER_PRESETS.map(([animal]) =>
@@ -48,7 +50,7 @@ test("23 illustrated presets include Vitor, the anime roster and three public fi
       }),
     ),
   );
-  assert.equal(new Set(variants).size, 23);
+  assert.equal(new Set(variants).size, 25);
   assert.ok(variants.every((s) => !s.includes("crispEdges")));
   for (const [animal] of PORTRAITS) {
     const markup = renderToStaticMarkup(

@@ -55,6 +55,8 @@ export const PORTRAITS = [
   ["lula", "Lula"],
   ["bolsonaro", "Bolsonaro"],
   ["ciro", "Ciro Gomes"],
+  ["evandro", "Evandro Excell"],
+  ["ratoswaldo", "Ratoswaldo"],
 ] as const;
 export const CHARACTER_PRESETS = PORTRAITS;
 export type CharacterId = (typeof CHARACTER_PRESETS)[number][0];
@@ -93,6 +95,12 @@ export function portraitSprite(id: CharacterId): {
   position: string;
   size?: string;
 } {
+  if (id === "evandro" || id === "ratoswaldo")
+    return {
+      image: "/characters/friends.png",
+      position: id === "evandro" ? "0% 50%" : "100% 50%",
+      size: "200% 100%",
+    };
   if (id === "ciro")
     return {
       image: "/characters/ciro.png",

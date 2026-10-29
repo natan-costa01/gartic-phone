@@ -53,7 +53,7 @@ npm run build
 
 ## Personagens e participantes
 
-Antes de criar ou entrar numa sala, use **Seu personagem**. Escolha entre 23 retratos prontos: **Vitor Carneiro** (o avatar inspirado na foto de referência), Naruto, Goku, Sasuke, Sakura, Luffy, Nami, Nezuko, Gojo, Tanjiro, **Rudeus Greyrat, Yuji Itadori, Zenitsu, Hinata Hyuga, Levi, Mikasa, Ichigo, Vegeta, Killua e Kakashi**, além de **Lula, Bolsonaro e Ciro Gomes**. A cor do fundo pode ser personalizada. Não há opções de boné, gorro ou óculos; detalhes do figurino original são fixos. A prévia muda enquanto você escolhe, e a preferência fica salva no navegador.
+Antes de criar ou entrar numa sala, use **Seu personagem**. Escolha entre 25 retratos prontos: **Vitor Carneiro** (o avatar inspirado na foto de referência), Naruto, Goku, Sasuke, Sakura, Luffy, Nami, Nezuko, Gojo, Tanjiro, **Rudeus Greyrat, Yuji Itadori, Zenitsu, Hinata Hyuga, Levi, Mikasa, Ichigo, Vegeta, Killua e Kakashi**, além de **Lula, Bolsonaro e Ciro Gomes**, **Evandro Excell** e **Ratoswaldo** (com filtro de rato e olhos abertos). A cor do fundo pode ser personalizada. Não há opções de boné, gorro ou óculos; detalhes do figurino original são fixos. A prévia muda enquanto você escolhe, e a preferência fica salva no navegador.
 
 Os animais foram retirados. Perfis antigos que usavam animais passam a usar o avatar padrão, mantendo a cor escolhida e sem impedir o acesso às salas existentes.
 
