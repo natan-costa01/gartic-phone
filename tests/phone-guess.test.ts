@@ -13,13 +13,13 @@ test('PhoneAdivinha keeps answers private and only the current drawer can publis
 });
 test('correct guesses score by server time, ignore accents, prevent duplicate points and end early when everyone solves',()=>{
  const {room,token,guest,third}=setup();room.guess!.word='Violão';
- act(room,guest,'guess',{round:0,value:'VIOLAO'},110000);assert.equal(room.guess!.scores[room.players[1].id],800);
+ act(room,guest,'guess',{round:0,value:'VIOLAO'},110000);assert.equal(room.guess!.scores[room.players[1].id],889);
  assert.throws(()=>act(room,guest,'guess',{round:0,value:'violão'},111000));
  assert.equal(view(room,third).guess!.word,null);assert.equal(view(room,third).guess!.messages[0].text,'Acertou!');
- act(room,third,'guess',{round:0,value:'violão'},150000);assert.equal(room.guess!.scores[room.players[2].id],400);
+ act(room,third,'guess',{round:0,value:'violão'},150000);assert.equal(room.guess!.scores[room.players[2].id],445);
  assert.equal(room.guess!.intermission,true);assert.equal(view(room,third).guess!.word,'Violão');
  tick(room,158000);assert.equal(room.round,1);assert.equal(view(room,guest).guess!.drawerId,room.players[1].id);assert.equal(view(room,token).guess!.word,null);
- assert.equal(room.guess!.scores[room.players[1].id],800);
+ assert.equal(room.guess!.scores[room.players[1].id],889);
  assert.throws(()=>act(room,token,'liveDrawing',{round:0,value:image},159000));
 });
 test('timeouts reveal the word, rotate all drawers, finish with scores and reset cleanly',()=>{
@@ -31,4 +31,15 @@ test('guesses validate length and throttle attempts; PhoneAdivinha always lasts 
  const {room,guest}=setup();assert.throws(()=>act(room,guest,'guess',{round:0,value:'a'.repeat(51)},101000));
  act(room,guest,'guess',{round:0,value:'wrong'},101000);assert.throws(()=>act(room,guest,'guess',{round:0,value:'wrong'},101001));
  const other=createRoom('D');join(other.room,'E');assert.throws(()=>act(other.room,other.token,'start',{mode:'phoneguess',seconds:30,ending:'auto'}));
+});
+
+test('unanswered or incorrect guesses receive zero, including at the deadline',()=>{
+ const {room,guest,third}=setup();
+ act(room,guest,'guess',{round:0,value:'not the answer'},110000);
+ assert.equal(room.guess!.scores[room.players[1].id],0);
+ assert.equal(room.guess!.messages[0].points,0);
+ const answer=room.guess!.word;
+ tick(room,190000);
+ assert.throws(()=>act(room,third,'guess',{round:0,value:answer},190000));
+ assert.equal(room.guess!.scores[room.players[2].id],0);
 });

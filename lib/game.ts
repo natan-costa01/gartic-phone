@@ -1,3 +1,4 @@
+import { guessPoints } from "./guess-scoring";
 import { startGuessTurn, tickGuess, guessDrawer, guessView, endGuessTurn, normalizeGuess, type GuessState } from "./phone-guess";
 import { parseCharacter, type Character } from "./characters";
 import { AUTO_SEND_GRACE_MS, timeOptionsFor } from "./settings";
@@ -164,7 +165,7 @@ export function act(
       if (now-(g.lastGuess[player.id] ?? 0)<800) throw new GameError("Aguarde um instante antes de tentar novamente.",429);
       g.lastGuess[player.id]=now;
       const correct=normalizeGuess(data.value)===normalizeGuess(g.word);
-      const points=correct ? Math.max(10,Math.ceil((room.deadline-now)/1000)*10) : 0;
+      const points=correct ? guessPoints(room.deadline-now) : 0;
       if (correct) { g.solved.push(player.id); g.scores[player.id]=(g.scores[player.id]??0)+points; }
       g.messages.push({id:(g.messages.at(-1)?.id ?? 0)+1, playerId:player.id,text:correct ? "Acertou!" : data.value.trim(),correct,points});
       g.messages=g.messages.slice(-60);

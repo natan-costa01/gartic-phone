@@ -1,3 +1,5 @@
+import { DRAWING_IDEAS } from "./drawing-ideas";
+import { GUESS_DURATION_MS } from "./guess-scoring";
 import { randomInt } from 'node:crypto';
 import type { Room } from './game';
 export type GuessState = {
@@ -5,14 +7,21 @@ export type GuessState = {
   scores: Record<string, number>; lastGuess: Record<string, number>;
   messages: { id: number; playerId: string; text: string; correct: boolean; points: number }[];
   intermission: boolean;
+  usedWords?: string[];
 };
-const WORDS = ['elefante','bicicleta','astronauta','castelo','girassol','pipoca','dinossauro','sereia','cachoeira','helicóptero','sorvete','tartaruga','foguete','guarda-chuva','violão','abacaxi','pinguim','montanha','borboleta','pirata','churrasco','jacaré','vulcão','robô','camelo','polvo','canguru','geladeira','espantalho','caranguejo','palhaço','escada','tesoura','coração','travesseiro','coroa','sanduíche','tubarão','morcego','zumbi'];
+
 export const normalizeGuess = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR').replace(/[^a-z0-9]/g,'');
 export function guessDrawer(room: Room) { return room.players[room.round % room.players.length].id; }
 export function startGuessTurn(room: Room, now: number) {
   const old = room.guess;
-  room.guess = { word: WORDS[randomInt(WORDS.length)], drawing:'', solved:[], scores:old?.scores ?? {}, lastGuess:{}, messages:[], intermission:false };
-  room.deadline = now + 90000;
+  const usedWords = old?.usedWords ?? [];
+  const available = DRAWING_IDEAS.filter(word => !usedWords.includes(word));
+  const choices = available.length ? available : DRAWING_IDEAS;
+  const word = choices[randomInt(choices.length)];
+  room.guess = { word, drawing:'', solved:[],
+    scores:old?.scores ?? Object.fromEntries(room.players.map(p => [p.id, 0])),
+    lastGuess:{}, messages:[], intermission:false, usedWords:[...usedWords, word] };
+  room.deadline = now + GUESS_DURATION_MS;
 }
 export function endGuessTurn(room: Room, now: number) {
   room.guess!.intermission = true;
