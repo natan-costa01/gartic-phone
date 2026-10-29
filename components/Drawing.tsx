@@ -40,12 +40,14 @@ const colors = [
 ];
 export default function Drawing({
   onSubmit,
+  onLive,
   busy,
   initialImage,
   reference,
   timeLeft,
   autoSend = false,
 }: {
+  onLive?: (value: string) => Promise<boolean>;
   onSubmit: (value: string) => Promise<boolean>;
   busy: boolean;
   initialImage?: string;
@@ -306,6 +308,19 @@ export default function Drawing({
     }
     throw new Error("Não foi possível preparar o desenho para envio.");
   }
+  const liveRef = useRef(onLive);
+  liveRef.current = onLive;
+  useEffect(() => {
+    if (!onLive || !ready) return;
+    let sending = false;
+    let previous = "";
+    const interval = setInterval(async () => {
+      if (sending || !canvas.current) return;
+      sending = true;
+      try { const snapshot=capture(); if (snapshot!==previous && await liveRef.current?.(snapshot)) previous=snapshot; } catch { /* Next snapshot retries automatically. */ } finally { sending = false; }
+    }, 1200);
+    return () => clearInterval(interval);
+  }, [!!onLive, ready]);
   function send() {
     try {
       onSubmit(capture());
@@ -546,7 +561,7 @@ export default function Drawing({
           {error}
         </p>
       )}
-      <button
+      {onLive ? <p className="auto-send-status" role="status">Seu desenho é compartilhado automaticamente.</p> : <button
         className="primary submit"
         disabled={!dirty || locked || !ready}
         onClick={send}
@@ -557,7 +572,7 @@ export default function Drawing({
           <Check size={18} />
         )}
         {autoSending ? "Enviando automaticamente…" : "Enviar desenho"}
-      </button>
+      </button>}
     </div>
   );
 }

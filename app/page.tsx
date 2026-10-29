@@ -31,6 +31,7 @@ import {
 } from "@/lib/characters";
 import ThemeToggle from "@/components/ThemeToggle";
 import { timeOptionsFor, timeLabel } from "@/lib/settings";
+import PhoneGuess from "@/components/PhoneGuess";
 import Drawing from "@/components/Drawing";
 import type { GameMode, RoomView } from "@/lib/game";
 type Session = { code: string; token: string };
@@ -698,7 +699,7 @@ export default function Page() {
                             onChange={(e) => {
                               const next = e.target.value as GameMode;
                               const nextSeconds =
-                                next === "lightning"
+                                next === "phoneguess" ? 90 : next === "lightning"
                                   ? 30
                                   : gameMode === "lightning"
                                     ? 90
@@ -713,6 +714,7 @@ export default function Page() {
                               });
                             }}
                           >
+                            <option value="phoneguess">PhoneAdivinha</option>
                             <option value="classic">Clássico</option>
                             <option value="chaos">Caos Criativo</option>
                             <option value="lightning">
@@ -721,7 +723,7 @@ export default function Page() {
                           </select>
                         </label>
                         <p className="mode-description">
-                          {gameMode === "chaos"
+                          {gameMode === "phoneguess" ? "Uma pessoa desenha, todos tentam acertar. 90 segundos, pontos por velocidade e uma vez para cada desenhista." : gameMode === "chaos"
                             ? "Comece com um desenho livre. Receba o anterior como base e acrescente algo inesperado a cada rodada. Só desenhos, até o fim!"
                             : gameMode === "lightning"
                               ? "Frases e desenhos como no Clássico, com rodadas rápidas de 15 a 60 segundos."
@@ -749,6 +751,7 @@ export default function Page() {
                             ))}
                           </select>
                         </label>
+                        {gameMode !== "phoneguess" && <>
                         <label>
                           Como a história termina?
                           <select
@@ -794,8 +797,9 @@ export default function Page() {
                             </small>
                           </span>
                         </label>
+                        </>}
                         <p className="settings-note">
-                          {gameMode === "chaos"
+                          {gameMode === "phoneguess" ? "Uma pessoa desenha, todos tentam acertar. 90 segundos, pontos por velocidade e uma vez para cada desenhista." : gameMode === "chaos"
                             ? "Todos criam o desenho inicial. Nas próximas rodadas, reinterpretam o desenho recebido acrescentando um novo elemento. Todos participam de cada álbum."
                             : "Cada um inventa só a primeira frase. Depois, é desenhar e adivinhar até todos participarem de cada álbum. O final escolhido pode acrescentar uma rodada."}
                         </p>
@@ -827,7 +831,15 @@ export default function Page() {
                     </div>
                   </>
                 )}
-                {room.status === "playing" && (
+                {room.mode === "phoneguess" && room.status !== "lobby" && <PhoneGuess room={room} remaining={remaining} busy={busy} action={action} live={async (value) => {
+                  const session = current.current;
+                  if (!session) return false;
+                  try {
+                    const res = await fetch("/api/rooms", { method: "POST", headers: {"Content-Type":"application/json", "x-player-token": session.token}, body: JSON.stringify({action:"liveDrawing",code:session.code,round:room.round,value}) });
+                    return res.ok;
+                  } catch { return false; }
+                }} />}
+                {room.status === "playing" && room.mode !== "phoneguess" && (
                   <>
                     <div className="round-bar">
                       <span>
@@ -1011,7 +1023,7 @@ export default function Page() {
                     )}
                   </>
                 )}
-                {room.status === "finished" && room.albums && (
+                {room.status === "finished" && room.mode !== "phoneguess" && room.albums && (
                   <>
                     <div className="game-heading">
                       <span className="eyebrow">

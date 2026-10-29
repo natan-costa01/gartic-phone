@@ -1,3 +1,4 @@
+import { startGuessTurn, tickGuess, guessDrawer, guessView, endGuessTurn, normalizeGuess, type GuessState } from "./phone-guess";
 import { parseCharacter, type Character } from "./characters";
 import { AUTO_SEND_GRACE_MS, timeOptionsFor } from "./settings";
 import { randomBytes, createHash } from "node:crypto";
@@ -13,8 +14,9 @@ export type Player = {
   secret: string;
   avatar?: Character;
 };
-export type GameMode = "classic" | "chaos" | "lightning";
+export type GameMode = "classic" | "chaos" | "lightning" | "phoneguess";
 export type Room = {
+  guess?: GuessState;
   revealCursor?: number;
   allRevealed?: boolean;
   mode?: GameMode;
@@ -123,7 +125,9 @@ export function roundClosesAt(room: Room) {
   );
 }
 export function tick(room: Room, now = Date.now()) {
-  if (room.status !== "playing" || now < roundClosesAt(room)) return false;
+  if (room.status !== "playing") return false;
+  if (room.mode === "phoneguess") return tickGuess(room, now);
+  if (now < roundClosesAt(room)) return false;
   for (const p of room.players) {
     const a = room.albums[albumIndex(room, p.id)];
     if (a.length === room.round)
@@ -146,7 +150,27 @@ export function act(
   now = Date.now(),
 ) {
   const player = authenticate(room, token);
-  if (action === "profile") {
+  if (action === "liveDrawing" || action === "guess") {
+    if (room.mode !== "phoneguess" || room.status !== "playing" || data.round !== room.round || room.guess!.intermission || now >= room.deadline)
+      throw new GameError("Esta rodada já terminou.",409);
+    const g=room.guess!, drawer=guessDrawer(room);
+    if (action === "liveDrawing") {
+      if (player.id !== drawer) throw new GameError("Só o desenhista pode desenhar.",403);
+      if (typeof data.value !== "string" || !/^data:image\/webp;base64,[A-Za-z0-9+/]+=*$/.test(data.value) || data.value.length>180000) throw new GameError("Desenho inválido.");
+      g.drawing=data.value;
+    } else {
+      if (player.id === drawer || g.solved.includes(player.id)) throw new GameError("Você não pode responder nesta rodada.",403);
+      if (typeof data.value !== "string" || !data.value.trim() || Array.from(data.value.trim()).length>50) throw new GameError("Escreva de 1 a 50 caracteres.");
+      if (now-(g.lastGuess[player.id] ?? 0)<800) throw new GameError("Aguarde um instante antes de tentar novamente.",429);
+      g.lastGuess[player.id]=now;
+      const correct=normalizeGuess(data.value)===normalizeGuess(g.word);
+      const points=correct ? Math.max(10,Math.ceil((room.deadline-now)/1000)*10) : 0;
+      if (correct) { g.solved.push(player.id); g.scores[player.id]=(g.scores[player.id]??0)+points; }
+      g.messages.push({id:(g.messages.at(-1)?.id ?? 0)+1, playerId:player.id,text:correct ? "Acertou!" : data.value.trim(),correct,points});
+      g.messages=g.messages.slice(-60);
+      if (g.solved.length===room.players.length-1) endGuessTurn(room,now);
+    }
+  } else if (action === "profile") {
     if (data.playerId !== undefined && data.playerId !== player.id)
       throw new GameError("Você só pode editar seu próprio personagem.", 403);
     player.avatar = characterOf(data.avatar);
@@ -173,7 +197,7 @@ export function act(
         403,
       );
     const mode = data.mode ?? room.mode ?? "classic";
-    if (!["classic", "chaos", "lightning"].includes(String(mode)))
+    if (!["classic", "chaos", "lightning", "phoneguess"].includes(String(mode)))
       throw new GameError("Modo inválido.");
     const seconds = Number(data.seconds ?? room.seconds);
     if (!timeOptionsFor(String(mode)).includes(seconds))
@@ -198,7 +222,7 @@ export function act(
     if (!["auto", "phrase", "drawing"].includes(String(data.ending)))
       throw new GameError("Final inválido.");
     const mode = data.mode ?? room.mode ?? "classic";
-    if (!["classic", "chaos", "lightning"].includes(String(mode)))
+    if (!["classic", "chaos", "lightning", "phoneguess"].includes(String(mode)))
       throw new GameError("Modo inválido.");
     if (!timeOptionsFor(String(mode)).includes(Number(data.seconds)))
       throw new GameError("Tempo inválido.");
@@ -217,12 +241,15 @@ export function act(
       kindAt(room.totalRounds - 1, room.mode) !== room.ending
     )
       room.totalRounds++;
+    room.guess = undefined;
+    if (room.mode === "phoneguess") room.totalRounds = room.players.length;
     room.round = 0;
     room.revealCursor = 0;
     room.allRevealed = false;
     room.albums = room.players.map(() => []);
     room.status = "playing";
     room.deadline = now + room.seconds * 1000;
+    if (room.mode === "phoneguess") startGuessTurn(room, now);
   } else if (action === "submit") {
     if (
       room.status !== "playing" ||
@@ -230,6 +257,7 @@ export function act(
       now >= roundClosesAt(room)
     )
       throw new GameError("Esta rodada já terminou. Atualize sua tela.", 409);
+    if (room.mode === "phoneguess") throw new GameError("Use as tentativas deste modo.");
     const album = room.albums[albumIndex(room, player.id)];
     if (album.length !== room.round)
       throw new GameError("Sua jogada já foi enviada.", 409);
@@ -257,6 +285,7 @@ export function act(
     if (room.hostId !== player.id || room.status !== "finished")
       throw new GameError("Aguarde o anfitrião e o fim da partida.", 403);
     room.status = "lobby";
+    room.guess = undefined;
     room.albums = [];
     room.round = 0;
     room.totalRounds = 0;
@@ -316,6 +345,7 @@ export function view(
         ? room.albums[albumIndex(room, player.id)]
         : null;
   return {
+    guess: guessView(room, player.id),
     version: room.version,
     mode: room.mode ?? "classic",
     autoSendDrawings: room.autoSendDrawings ?? false,

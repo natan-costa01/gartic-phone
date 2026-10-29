@@ -3,6 +3,7 @@ export const TIME_OPTIONS = [
   15, 20, 30, 45, 60, 90, 120, 180, 240, 300, 600,
 ] as const;
 export function timeOptionsFor(mode: string): readonly number[] {
+  if (mode === "phoneguess") return [90];
   return TIME_OPTIONS.filter(
     (seconds) => mode !== "lightning" || seconds <= 60,
   );

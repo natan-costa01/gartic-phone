@@ -32,7 +32,7 @@ export default function Participants({
               </strong>
               <small>
                 {p.id === room.me ? "Você · " : ""}
-                {room.status === "lobby"
+                {room.mode === "phoneguess" && room.status !== "lobby" ? `${room.guess?.scores[p.id] ?? 0} pontos · ${room.guess?.drawerId === p.id ? "Desenhista" : room.guess?.solved.includes(p.id) ? "Acertou" : "Adivinhando"}` : room.status === "lobby"
                   ? "Na sala"
                   : room.status === "finished"
                     ? room.players[room.revealedAlbum]?.id === p.id

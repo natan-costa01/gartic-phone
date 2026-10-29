@@ -112,6 +112,7 @@ export async function saveDrawing(room: Room, value: string): Promise<string> {
 }
 export async function hydrate(state: RoomView): Promise<RoomView> {
   const entries = [
+    ...(state.guess?.drawing ? [{ get value() { return state.guess!.drawing; }, set value(v: string) { state.guess!.drawing=v; } }] : []),
     ...(state.previous ? [state.previous] : []),
     ...(state.albums?.flat() ?? []),
   ];

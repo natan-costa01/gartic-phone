@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
     const token = tokenOf(req);
     let drawingRef: string | null = null;
     if (
-      data.action === "submit" &&
+      (data.action === "submit" || data.action === "liveDrawing") &&
       typeof data.value === "string" &&
       /^data:image\/webp;base64,[A-Za-z0-9+/]+=*$/.test(data.value) &&
       data.value.length <= 180000
@@ -122,6 +122,7 @@ export async function POST(req: NextRequest) {
       authenticate(r, token);
       tick(r);
       act(r, token, data.action, data);
+      if (drawingRef && r.guess && r.guess.drawing === data.value) r.guess.drawing = drawingRef;
       if (drawingRef)
         for (const album of r.albums)
           for (const entry of album)

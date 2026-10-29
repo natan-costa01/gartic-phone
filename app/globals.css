@@ -2452,3 +2452,17 @@ footer {
     scroll-behavior: auto !important;
   }
 }
+
+.guess-layout { display:grid; grid-template-columns:minmax(0,1fr) 280px; gap:18px; align-items:start; }
+.guess-word { text-align:center; margin:16px 0; }
+.guess-word h2 { letter-spacing:2px; }
+.guess-canvas { background:white; border-radius:18px; aspect-ratio:4/3; display:flex; align-items:center; justify-content:center; overflow:hidden; color:#555; }
+.guess-canvas img { width:100%; height:100%; object-fit:contain; }
+.guess-chat { padding:20px; }
+.guess-chat form { display:grid; gap:10px; }
+.guess-messages { height:250px; overflow:auto; display:flex; flex-direction:column-reverse; margin:12px 0; }
+.guess-messages p { overflow-wrap:anywhere; margin:5px 0; }
+.guess-correct { color:var(--accent,#3dbe93); }
+.guess-ranking { padding:0; list-style-position:inside; }
+.guess-ranking li { padding:16px; display:flex; justify-content:space-between; border-bottom:1px solid var(--border); }
+@media(max-width:1000px) { .guess-layout { grid-template-columns:1fr; } .guess-messages { height:180px; } }
