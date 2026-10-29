@@ -101,3 +101,14 @@ Os testes automatizados validam a lógica e privacidade das rodadas, permissões
 O anfitrião pode selecionar **PhoneAdivinha** na sala de espera. Um participante por vez recebe uma palavra secreta do jogo e tem **90 segundos** para desenhar. O desenho é compartilhado automaticamente, e os demais enviam tentativas de até 50 caracteres. Um acerto vale **até 1.000 pontos**, diminuindo proporcionalmente aos 90 segundos restantes (45 segundos = 500 pontos). Respostas erradas e rodadas sem acerto valem **0 pontos**. As ideias são sorteadas automaticamente de um banco variado, sem repetição na partida, incluindo objetos, animais, cenas criativas e os nomes Evandro, Oswaldo, Allan, Feriani e Hellen Cearense. Acentos e maiúsculas são ignorados. Quem acertou não pode pontuar novamente na mesma rodada. Se todos acertarem, a rodada termina antes do prazo. A palavra é revelada por 8 segundos, depois o próximo jogador desenha. Cada participante desenha uma vez, e o placar final ordena os pontos. Esse modo não usa os álbuns/PDF dos modos de sequência.
 
 O compartilhamento usa snapshots compactos do canvas e a sincronização periódica da sala, compatíveis com o backend Redis e a Vercel. A atualização pode levar alguns segundos conforme a conexão. O desenhista precisa manter a página aberta. O servidor calcula pontos, controla prazos e mantém a palavra secreta fora das respostas dos jogadores que ainda não acertaram.
+
+### PhoneEnigma (solo)
+
+Acesse **/enigma** ou o cartão PhoneEnigma na página inicial. Não precisa de sala, conta ou Redis. O jogador tem seis tentativas; cada erro revela mais quatro partes da ilustração, até o desenho completo. A categoria ajuda desde o começo. Acertos valem de 600 pontos (primeira tentativa) a 100 (sexta); sem acerto, zero. Acentos, maiúsculas e alguns sinônimos são aceitos.
+
+- **Desafio do dia:** mesma ilustração para todos, com virada à meia-noite de Brasília. A página verifica a troca de dia ao recuperar foco e periodicamente.
+- **Modo livre:** próxima ilustração aleatória, evitando repetir imediatamente a anterior.
+- Progresso, vitórias e sequência diária são locais ao navegador; limpar seus dados apaga o histórico. Sem placar global ou verificação competitiva.
+- Compartilhamento com quadradinhos e pontuação, sem a resposta. O resultado é copiado; quando necessário, usa o compartilhamento do dispositivo ou exibe o texto.
+
+A primeira coleção tem **12 ilustrações originais** (gato, maçã, chave de fenda, computador, bicicleta, foguete, sorvete, elefante, guarda-chuva, violão, pizza e castelo). O desafio diário percorre a coleção antes de repetir. Para ampliar o catálogo, mantenha o mapeamento entre o banco em `lib/enigma-server.ts` e a imagem em `public/enigma/drawings.png`. A API valida tentativas e retorna a resposta somente após vitória ou seis tentativas; o progresso é enviado pelo navegador, não serve como registro antifraude.
