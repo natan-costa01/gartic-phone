@@ -831,7 +831,7 @@ export default function Page() {
                     </div>
                   </>
                 )}
-                {room.mode === "phoneguess" && room.status !== "lobby" && <PhoneGuess room={room} remaining={remaining} busy={busy} action={action} live={async (value) => {
+                {room.mode === "phoneguess" && room.status !== "lobby" && <PhoneGuess room={room} remaining={remaining} serverOffset={offset} busy={busy} action={action} live={async (value) => {
                   const session = current.current;
                   if (!session) return false;
                   try {
