@@ -2538,3 +2538,6 @@ footer {
 .enigma-input input { background:var(--field); color:var(--ink); border:1px solid var(--line); padding:12px 14px; border-radius:10px; }
 .enigma-input input::placeholder { color:var(--faint); }
 .enigma-topbar .tabs button.selected { background:var(--accent-soft); color:var(--accent-strong); }
+.enigma-mask { grid-template-columns:repeat(8,1fr); grid-template-rows:repeat(8,1fr); }
+.enigma-sprite { filter:grayscale(1) contrast(1.2); }
+.enigma-daily-label { display:flex; align-items:center; gap:8px; font-weight:600; color:var(--accent); }

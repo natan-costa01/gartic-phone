@@ -11,17 +11,26 @@ test('daily challenge is identical for everyone and uses the Brasilia calendar',
  assert.equal(new Set(Array.from({length:12},(_,i)=>dailyEnigmaId(`2026-10-${String(i+1).padStart(2,'0')}`))).size,12);
  assert.throws(()=>evaluateEnigma({mode:'daily',day:'2000-01-01'},now));
 });
+function puzzle(id:number, guesses:string[]) {
+ for(let day=1;day<=12;day++) {
+  const date=new Date(`2026-10-${String(day).padStart(2,'0')}T15:00:00Z`);
+  if(dailyEnigmaId(enigmaDate(date))===id)return evaluateEnigma({mode:'daily',guesses},date);
+ }
+ throw Error('Puzzle not found');
+}
 test('six guesses reveal the answer only at win or loss, and award fewer points with more clues',()=>{
- assert.equal(evaluateEnigma({mode:'free',id:0,guesses:['gato']},now).score,600);
- const result=evaluateEnigma({mode:'free',id:1,guesses:['banana','MACA']},now);
+ assert.equal(puzzle(0,['gato']).score,600);
+ const result=puzzle(1,['banana','MACA']);
  assert.equal(result.answer,'maçã');assert.equal(result.score,500);assert.equal(result.won,true);
- const incomplete=evaluateEnigma({mode:'free',id:2,guesses:['martelo']},now);assert.equal(incomplete.answer,null);assert.equal(incomplete.finished,false);
- const loss=evaluateEnigma({mode:'free',id:2,guesses:Array(6).fill('martelo')},now);assert.equal(loss.answer,'chave de fenda');assert.equal(loss.score,0);assert.equal(loss.finished,true);
- assert.equal(evaluateEnigma({mode:'free',id:3,guesses:['PC','wrong']},now).attempts.length,1);
+ const incomplete=puzzle(2,['martelo']);assert.equal(incomplete.answer,null);assert.equal(incomplete.finished,false);
+ const loss=puzzle(2,Array(6).fill('martelo'));assert.equal(loss.answer,'chave de fenda');assert.equal(loss.score,0);assert.equal(loss.finished,true);
+ assert.equal(puzzle(3,['PC','wrong']).attempts.length,1);
 });
-test('invalid guesses and ids are rejected, and free mode skips the previous drawing',()=>{
- for(const value of [{mode:'bad'},{mode:'free',id:-1},{mode:'free',id:99},{mode:'free',id:0,guesses:['']},{mode:'free',id:0,guesses:['x'.repeat(51)]},{mode:'free',id:0,guesses:Array(7).fill('x')}])assert.throws(()=>evaluateEnigma(value,now));
- for(let i=0;i<30;i++)assert.notEqual(evaluateEnigma({mode:'free',exclude:5},now).id,5);
+test('free mode is rejected and clients cannot choose future daily drawings',()=>{
+ assert.throws(()=>evaluateEnigma({mode:'free',id:0},now));
+ assert.throws(()=>evaluateEnigma({mode:'daily',day:'2026-10-30'},now));
+ assert.equal(evaluateEnigma({mode:'daily',id:999},now).id,dailyEnigmaId(enigmaDate(now)));
+ for(const value of [{mode:'bad'},{mode:'daily',guesses:['']},{mode:'daily',guesses:['x'.repeat(51)]},{mode:'daily',guesses:Array(7).fill('x')}])assert.throws(()=>evaluateEnigma(value,now));
 });
 test('daily streak continues across midnight and resets when a day is missed',()=>{
  assert.equal(enigmaStreak(['2026-10-27','2026-10-28'],'2026-10-29'),2);

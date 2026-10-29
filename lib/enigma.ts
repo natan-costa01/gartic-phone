@@ -17,7 +17,7 @@ export function enigmaStreak(wins: string[], today: string) {
   return streak;
 }
 export type EnigmaResult = {
-  id: number; day: string; mode: 'daily' | 'free'; category: string;
+  id: number; day: string; mode: 'daily'; category: string;
   attempts: { value: string; correct: boolean }[];
   finished: boolean; won: boolean; answer: string | null; score: number;
 };

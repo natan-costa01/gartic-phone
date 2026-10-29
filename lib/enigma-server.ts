@@ -1,4 +1,3 @@
-import { randomInt } from 'node:crypto';
 import { enigmaDate, normalizeEnigma, ENIGMA_LIMIT, type EnigmaResult } from './enigma';
 // This answer bank is imported only by server routes.
 const PUZZLES = [
@@ -20,10 +19,9 @@ export function dailyEnigmaId(day: string) {
   return ((days * 5 + 7) % PUZZLES.length + PUZZLES.length) % PUZZLES.length;
 }
 export function evaluateEnigma(input: Record<string, unknown>, now = new Date()): EnigmaResult {
-  if (input.mode !== 'daily' && input.mode !== 'free') throw Error('Modo inválido.');
+  if (input.mode !== 'daily') throw Error('Modo inválido.');
   const day = enigmaDate(now);
-  const id = input.mode === 'daily' ? dailyEnigmaId(day)
-    : input.id === undefined ? randomFreeId(input.exclude) : Number(input.id);
+  const id = dailyEnigmaId(day);
   if (!Number.isInteger(id) || id < 0 || id >= PUZZLES.length) throw Error('Desafio inválido.');
   if (input.mode === 'daily' && input.day !== undefined && input.day !== day)
     throw Error('Um novo desafio do dia chegou. Recarregue a página.');
@@ -41,8 +39,4 @@ export function evaluateEnigma(input: Record<string, unknown>, now = new Date())
   const won = attempts.some(a => a.correct), finished = won || attempts.length === ENIGMA_LIMIT;
   return { id, day, mode:input.mode, category, attempts, won, finished, answer:finished ? answer : null,
     score:won ? (7 - attempts.length) * 100 : 0 };
-}
-function randomFreeId(exclude: unknown) {
-  const choices = PUZZLES.map((_, i) => i).filter(i => i !== exclude);
-  return choices[randomInt(choices.length)];
 }

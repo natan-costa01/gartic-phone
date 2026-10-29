@@ -412,7 +412,7 @@ export default function Page() {
               </div>
               <Illustration />
             </section>
-            <Link href="/enigma" className="enigma-home-card"><span className="enigma-home-icon"><Lightbulb size={28}/></span><span><small>PARA JOGAR SOLO</small><strong>PhoneEnigma</strong><span>Um desenho, seis chances. Descubra o desafio do dia ou jogue no modo livre.</span></span><ArrowRight size={24}/></Link>
+            <Link href="/enigma" className="enigma-home-card"><span className="enigma-home-icon"><Lightbulb size={28}/></span><span><small>PARA JOGAR SOLO</small><strong>PhoneEnigma</strong><span>Um desenho, seis chances. Um desafio por dia, em preto e branco. Será que você descobre?</span></span><ArrowRight size={24}/></Link>
             <section className="entry-section">
               <div className="room-card">
                 <div className="card-heading">

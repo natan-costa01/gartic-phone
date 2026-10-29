@@ -104,10 +104,10 @@ O compartilhamento usa snapshots compactos do canvas e a sincronização periód
 
 ### PhoneEnigma (solo)
 
-Acesse **/enigma** ou o cartão PhoneEnigma na página inicial. Não precisa de sala, conta ou Redis. O jogador tem seis tentativas; cada erro revela mais quatro partes da ilustração, até o desenho completo. A categoria ajuda desde o começo. Acertos valem de 600 pontos (primeira tentativa) a 100 (sexta); sem acerto, zero. Acentos, maiúsculas e alguns sinônimos são aceitos.
+Acesse **/enigma** ou o cartão PhoneEnigma na página inicial. Não precisa de sala, conta ou Redis. O jogador tem seis tentativas; cada erro revela mais fragmentos de uma ilustração grosseira em preto e branco. As seis pistas mostram 4, 8, 14, 22, 34 e 48 dos 64 fragmentos; a imagem completa aparece só ao terminar. A categoria aparece na quarta pista. Acertos valem de 600 pontos (primeira tentativa) a 100 (sexta); sem acerto, zero. Acentos, maiúsculas e alguns sinônimos são aceitos.
 
 - **Desafio do dia:** mesma ilustração para todos, com virada à meia-noite de Brasília. A página verifica a troca de dia ao recuperar foco e periodicamente.
-- **Modo livre:** próxima ilustração aleatória, evitando repetir imediatamente a anterior.
+- **Somente diário:** o modo livre foi removido, inclusive da API. Após terminar, aguarde o próximo dia.
 - Progresso, vitórias e sequência diária são locais ao navegador; limpar seus dados apaga o histórico. Sem placar global ou verificação competitiva.
 - Compartilhamento com quadradinhos e pontuação, sem a resposta. O resultado é copiado; quando necessário, usa o compartilhamento do dispositivo ou exibe o texto.
 
